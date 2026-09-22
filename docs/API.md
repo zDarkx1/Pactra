@@ -1,12 +1,12 @@
 # Current HTTP API — starter v1
 
-Only these endpoints are implemented. Other product APIs are proposals, not available routes.
+This page documents the original checker endpoints. Additional implemented APIs: [Azure semantic review](AZURE_AI.md) and [wallet/task workspace contract](../backend/internal/workspace/README.md). See [persistent backend setup](PERSISTENT_BACKEND.md). Other settlement/product APIs remain proposals.
 
 ## GET /health
 Response200: {"status":"ok"}.
 
 ## GET /ready
-Response200: {"status":"ready","mode":"stateless-checker"}. This has no database or AI dependency.
+Without workspace config: response200 {"status":"ready","mode":"stateless-checker"}. With DATABASE_URL/auth config, readiness pings PostgreSQL and returns mode=persistent-workspace; failed DB probe returns503. AI is not probed.
 
 ## POST /api/v1/check (Go)
 Browser uses POST /api/check (Next proxy) with the same body/response.

@@ -1,5 +1,10 @@
 # Roadmap and ownership
 
+## Latest backend checkpoint
+Implemented: optional real Azure semantic review, PostgreSQL persistence for private invitations/manifests, EOA wallet sessions, immutable worker acceptance and cancellation before acceptance. Hosted Supabase smoke verified. See PERSISTENT_BACKEND.md and workspace API README.
+
+Next: frontend wallet/task integration; real team arbiter configuration; idempotent creation and pagination; versioned submissions/evidence storage; authenticated per-user AI budgets; cleanup/backup/restore; remaining settlement policy and reviewed contracts. No funding/payment route exists. The phases below describe the broader plan, not all remaining work from zero.
+
 ## P0 — runnable team foundation (this handoff)
 Go checker, Next workbench, tests, env, docs and CI. Verify locally and inspect VERIFICATION.md.
 

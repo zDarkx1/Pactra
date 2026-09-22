@@ -2,6 +2,10 @@
 
 No funds should be accepted until these decisions have an owner-approved answer and contract tests. This file is NOT a deployed policy.
 
+## Implementation status update
+
+The Go workspace now implements designated-worker invitations and immutable manifest acceptance, storing agreed per-deliverable amounts/revision limits/review windows. It ends at `accepted_unfunded`; no funding, revision execution, payout, dispute or timeout-claim behavior is implemented. The historical approval bullets below describe policy and may say 'not implemented' for the financial workflow even where agreement recording now exists. Technical defaults are documented in PERSISTENT_BACKEND.md.
+
 ## Agreed product decisions
 
 - **Worker assignment:** Buyer invites one designated worker by wallet address. The invited worker reviews the scope and accepts before funding. Public open-claim tasks are outside the MVP. Approved by the owner in chat; not yet implemented.

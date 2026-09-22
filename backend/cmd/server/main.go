@@ -45,10 +45,18 @@ func aiConfig(getenv func(string) string) backend.AIConfig {
 }
 func run(ctx context.Context, addr string) error { return runWithAI(ctx, addr, backend.AIConfig{}) }
 func runWithAI(ctx context.Context, addr string, config backend.AIConfig) error {
+	return runConfigured(ctx, addr, config, func(string) string { return "" })
+}
+func runConfigured(ctx context.Context, addr string, config backend.AIConfig, getenv func(string) string) error {
 	handler, err := backend.NewHandlerWithAI(config)
 	if err != nil {
 		return err
 	}
+	handler, cleanup, err := withWorkspace(ctx, handler, getenv)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("listen: %w", err)
@@ -86,7 +94,7 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := runWithAI(ctx, addr, aiConfig(os.Getenv)); err != nil {
+	if err := runConfigured(ctx, addr, aiConfig(os.Getenv), os.Getenv); err != nil {
 		log.Print(err)
 		os.Exit(1)
 	}
