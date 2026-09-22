@@ -40,13 +40,21 @@ func address(getenv func(string) string) (string, error) {
 	}
 	return net.JoinHostPort(host, strconv.Itoa(n)), nil
 }
-func run(ctx context.Context, addr string) error {
+func aiConfig(getenv func(string) string) backend.AIConfig {
+	return backend.AIConfig{Endpoint: getenv("PROOFPAY_AI_ENDPOINT"), Model: getenv("PROOFPAY_AI_MODEL"), APIKey: getenv("PROOFPAY_AI_KEY")}
+}
+func run(ctx context.Context, addr string) error { return runWithAI(ctx, addr, backend.AIConfig{}) }
+func runWithAI(ctx context.Context, addr string, config backend.AIConfig) error {
+	handler, err := backend.NewHandlerWithAI(config)
+	if err != nil {
+		return err
+	}
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return fmt.Errorf("listen: %w", err)
 	}
 	defer listener.Close()
-	server := &http.Server{Handler: backend.NewHandler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024}
+	server := &http.Server{Handler: handler, BaseContext: func(net.Listener) context.Context { return ctx }, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 35 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024}
 	done := make(chan error, 1)
 	go func() { done <- server.Serve(listener) }()
 	select {
@@ -78,7 +86,7 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := run(ctx, addr); err != nil {
+	if err := runWithAI(ctx, addr, aiConfig(os.Getenv)); err != nil {
 		log.Print(err)
 		os.Exit(1)
 	}

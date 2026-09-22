@@ -1,0 +1,11 @@
+'use client';
+import {useEffect,useRef,useState} from 'react';
+type Finding={key:string;assessment:string;source_excerpt:string;submission_excerpt:string;explanation:string};
+export default function SemanticReview({body}:{body:string|null}){
+ const [consent,setConsent]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[findings,setFindings]=useState<Finding[]>([]);
+ const active=useRef<AbortController|null>(null);
+ useEffect(()=>()=>active.current?.abort(),[]);
+ async function run(){if(!body||!consent||busy)return;const c=new AbortController();active.current=c;setBusy(true);setError('');setFindings([]);
+ try{const r=await fetch('/api/review',{method:'POST',headers:{'Content-Type':'application/json'},body,signal:c.signal,credentials:'omit'});const d=await r.json();if(!r.ok)throw Error(d.error?.message||'AI unavailable.');if(!c.signal.aborted)setFindings(d.findings)}catch(e){if(!c.signal.aborted)setError(e instanceof Error?e.message:'AI review unavailable.')}finally{if(!c.signal.aborted)setBusy(false)}}
+ return <section className="editor-panel" style={{marginTop:24,padding:20}} aria-label="AI semantic review"><h2>AI semantic review · Azure Foundry</h2><p className="field-help">Optional advisory analysis of meaning. Not buyer acceptance, dispute resolution or payment authorization. Up to 20 keys and 16 KiB.</p><label className="checkbox-row"><input type="checkbox" checked={consent} onChange={e=>{setConsent(e.target.checked);if(!e.target.checked){active.current?.abort();setBusy(false);setFindings([])}}}/><span>Send these source and submission texts to the configured Azure AI provider. Do not include private or sensitive content.</span></label><button type="button" className="primary" disabled={!body||!consent||busy} onClick={run}>{busy?'Reviewing meaning…':'Review meaning with AI'}</button>{error&&<p role="alert" className="error">{error}</p>}{busy&&<p role="status">Waiting for AI. Deterministic results are separate.</p>}<ul className="check-list">{findings.map(f=><li key={f.key}><div className="check-top"><strong>{f.key}</strong><span>{f.assessment}</span></div><p><strong>Source:</strong> {f.source_excerpt}</p><p><strong>Submission:</strong> {f.submission_excerpt}</p><p>{f.explanation}</p></li>)}</ul></section>
+}

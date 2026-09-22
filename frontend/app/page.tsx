@@ -1,5 +1,6 @@
 'use client';
 
+import SemanticReview from './semantic-review';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { buildRawRequest, invalidateResult } from '../lib/check-input';
@@ -50,6 +51,8 @@ export default function Workbench() {
       if (generation.current === current && !pending.signal.aborted) setView({ result: null, error: cause instanceof Error ? cause.message : 'Unable to reach the checker.', loading: false });
     }
   }
+  let reviewBody: string | null = null;
+  try { reviewBody = buildRawRequest(input); } catch { /* Invalid inputs cannot start AI review. */ }
   return <div className="shell">
     <a className="skip" href="#workbench">Skip to workbench</a>
     <aside className="sidebar" aria-label="Workspace overview">
@@ -57,14 +60,14 @@ export default function Workbench() {
       <div className="workspace-label">LOCAL WORKSPACE <span className="dot" /></div>
       <div className="active-nav"><span aria-hidden="true">▦</span> Localization checker <span className="nav-index">01</span></div>
       <div className="roadmap"><p className="eyebrow">PLANNED MILESTONES</p>
-        {['Wallet connection', 'Escrow & settlement', 'Submission storage', 'AI semantic review'].map((name, index) => <div className="milestone" key={name}><span className="milestone-number">0{index + 2}</span><div>{name}<small>NOT IMPLEMENTED</small></div></div>)}
+        {['Wallet connection', 'Escrow & settlement', 'Submission storage'].map((name, index) => <div className="milestone" key={name}><span className="milestone-number">0{index + 2}</span><div>{name}<small>NOT IMPLEMENTED</small></div></div>)}
       </div>
       <div className="sidebar-note"><span className="small-mark" aria-hidden="true">◇</span><strong>Evidence before action.</strong><p>Deterministic checks are a starting point. Human review stays essential.</p><span className="version">STARTER / LOCALIZATION V1</span></div>
     </aside>
     <div className="main-column">
       <header className="topbar"><span>Workspace <span className="slash">/</span> <strong>Localization</strong></span><span className="local-badge"><span className="dot" /> Local starter</span></header>
       <main id="workbench">
-        <div className="scope-banner"><span aria-hidden="true">ⓘ</span> Local checker starter • no wallet, escrow, storage or AI provider connected</div>
+        <div className="scope-banner"><span aria-hidden="true">ⓘ</span> Local starter • optional Azure AI review • no wallet, escrow or storage connected</div>
         <div className="page-heading"><div><p className="eyebrow">SUBMISSION WORKBENCH</p><h1>Make every string count.</h1><p className="subtitle">Compare a translation against its source. See exactly what needs attention.</p></div><span className="engine-tag">DETERMINISTIC<br /><strong>localization-v1</strong></span></div>
         <div className="work-grid">
           <section className="editor-panel" aria-labelledby="input-title">
@@ -94,7 +97,8 @@ export default function Workbench() {
             <div className="report-footer"><span aria-hidden="true">◇</span> Check evidence only. Not a financial authorization.</div>
           </section>
         </div>
-        <section className="scope-details" aria-label="Checker scope"><div><span>01 / STRUCTURE</span><h3>Matching keys</h3><p>Find missing or extra keys and empty translations.</p></div><div><span>02 / CONSTRAINTS</span><h3>Preserved intent markers</h3><p>Check placeholder tokens and exact required terms.</p></div><div><span>03 / HUMAN JUDGMENT</span><h3>Meaning still needs you</h3><p>No semantic quality assessment or AI review is performed.</p></div></section>
+        <SemanticReview key={JSON.stringify(input)} body={reviewBody} />
+        <section className="scope-details" aria-label="Checker scope"><div><span>01 / STRUCTURE</span><h3>Matching keys</h3><p>Find missing or extra keys and empty translations.</p></div><div><span>02 / CONSTRAINTS</span><h3>Preserved intent markers</h3><p>Check placeholder tokens and exact required terms.</p></div><div><span>03 / HUMAN JUDGMENT</span><h3>Meaning still needs you</h3><p>Deterministic checks do not assess meaning. Request the separate advisory AI review when needed.</p></div></section>
         <footer className="page-footer"><span>ProofPay <span className="footer-separator">/</span> Local checker starter</span><span>No persistence. Results clear when inputs change.</span></footer>
       </main>
     </div>

@@ -40,7 +40,10 @@ type request struct {
 }
 
 // NewHandler returns a concurrency-safe HTTP handler with no external dependencies.
-func NewHandler() http.Handler { return http.HandlerFunc(serveHTTP) }
+func NewHandler() http.Handler {
+	h, _ := NewHandlerWithAI(AIConfig{})
+	return h
+}
 func respond(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)

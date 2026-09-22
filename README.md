@@ -4,6 +4,10 @@
 
 ProofPay is a proposed AI-assisted acceptance and settlement product for small localization jobs. Buyers and workers agree on a source snapshot, requirements and deliverable allocations before work starts. Objective checks are reproducible; semantic AI review is advisory and evidence-linked. Accepted deliverables may eventually be settled independently of disputed work.
 
+## Azure integration update
+
+Optional real semantic review is now implemented separately from deterministic checks. Read [Azure AI setup and limits](docs/AZURE_AI.md). Default checkout has no credentials and AI stays disabled until configured. No wallet/escrow implementation or deployment has been added.
+
 ## What is actually implemented
 
 This repository is a **team development foundation**, not a finished escrow marketplace.
@@ -13,7 +17,7 @@ This repository is a **team development foundation**, not a finished escrow mark
 - Go deterministic flat-JSON localization checker: key parity, nonblank output, placeholder preservation and selected exact required terms.
 - Unit/HTTP tests, CI, safe environment examples and role-specific documentation.
 
-**Not implemented:** accounts or wallet login, persistent tasks, agreement freezing/cryptographic commitments, AI provider integration, uploads, smart contracts, BOT transfers, disputes, deployment or competition submission. A successful check is NOT acceptance or payment authorization. No fake AI review or wallet transactions are shown.
+**Not implemented:** accounts or wallet login, persistent tasks, agreement freezing/cryptographic commitments, uploads, smart contracts, BOT transfers, disputes, deployment or competition submission. A successful check is NOT acceptance or payment authorization. No fake AI review or wallet transactions are shown.
 
 ## Quick start
 
