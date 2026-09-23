@@ -1,4 +1,4 @@
-# ProofPay backend
+# Pactra backend
 
 A standard-library-only Go 1.27.1 stateless localization JSON acceptance checker. No escrow, payments, blockchain, cryptographic proof, hash endpoint, database, authentication, AI, or outbound network calls. Deterministic syntactic checks are not semantic or translation-quality verification. Human review is required.
 
@@ -10,7 +10,7 @@ From this directory, with Go 1.27.1 on PATH:
 go run ./cmd/server
 go test -race ./...
 go vet ./...
-go build -o bin/proofpay ./cmd/server
+go build -o bin/pactra ./cmd/server
 # Optional real-process smoke test (Python 3 standard library):
 python3 scripts/smoke.py
 ```
@@ -25,7 +25,7 @@ curl -s http://127.0.0.1:8080/health
 curl -s http://127.0.0.1:8080/ready
 curl -s http://127.0.0.1:8080/api/v1/check \
   -H 'Content-Type: application/json' \
-  --data '{"source":{"greeting":"Hello {name}, use ProofPay"},"submission":{"greeting":"Bonjour {name}, utilisez ProofPay"},"rules":{"preserve_placeholders":true,"required_terms":["ProofPay"]}}'
+  --data '{"source":{"greeting":"Hello {name}, use Pactra"},"submission":{"greeting":"Bonjour {name}, utilisez Pactra"},"rules":{"preserve_placeholders":true,"required_terms":["Pactra"]}}'
 ```
 
 The server binds before serving; configuration and bind failures exit nonzero. SIGTERM/SIGINT trigger graceful shutdown with a 10-second deadline. HTTP timeouts: headers 5s, read 10s, write 15s, idle 60s; max headers 16 KiB. No request/body logging or CORS middleware. Intended for a same-origin Next.js BFF, not as a hardened public deployment.
@@ -45,13 +45,13 @@ The server binds before serving; configuration and bind failures exit nonzero. S
 A valid request always returns HTTP 200, including failed acceptance:
 
 ```json
-{"checker_version":"localization-v1","passed":true,"checks":[{"id":"key_parity","key":"greeting","status":"pass","message":"Key exists in source and submission."},{"id":"nonempty","key":"greeting","status":"pass","message":"Submission is nonblank."},{"id":"placeholders","key":"greeting","status":"pass","message":"Placeholder multisets match."},{"id":"required_term","key":"greeting","status":"pass","message":"Required term preserved: ProofPay"}],"ai_review":{"status":"not_configured","message":"Semantic review is not implemented. Human review required."}}
+{"checker_version":"localization-v1","passed":true,"checks":[{"id":"key_parity","key":"greeting","status":"pass","message":"Key exists in source and submission."},{"id":"nonempty","key":"greeting","status":"pass","message":"Submission is nonblank."},{"id":"placeholders","key":"greeting","status":"pass","message":"Placeholder multisets match."},{"id":"required_term","key":"greeting","status":"pass","message":"Required term preserved: Pactra"}],"ai_review":{"status":"not_configured","message":"Semantic review is not implemented. Human review required."}}
 ```
 
 Checks use the sorted union of keys (Go lexicographic string order). Within each key, fixed order is `key_parity`, `nonempty` if submission exists, `placeholders` if enabled and both values exist, then `required_term` for applicable terms in request-array order. Repeated terms produce repeated checks. Term messages identify the literal term. `passed` is true only if every emitted check passes. No timestamps or random identifiers.
 
 Errors use `{"error":{"code":"invalid_request","message":"Invalid checker request."}}` with generic messages that never echo the body. Codes/statuses: `invalid_request`/400, `request_too_large`/413, `unsupported_media_type`/415, `method_not_allowed`/405 (with Allow), `not_found`/404. Exact paths only, no redirects. HEAD/OPTIONS are not supported. Routing/method checks precede content type, which precedes body validation. All application responses have `Content-Type: application/json` and `X-Content-Type-Options: nosniff`; no CORS headers. Transport-level HTTP parser failures remain handled by Go's HTTP server.
 
-Public integration entry point: `backend.NewHandler() http.Handler` in module `proofpay/backend`. Safe to share between concurrent requests.
+Public integration entry point: `backend.NewHandler() http.Handler` in module `pactra/backend`. Safe to share between concurrent requests.
 
 Monorepo documentation: [backend architecture](../docs/BACKEND.md). That document is maintained outside this backend-only scope.

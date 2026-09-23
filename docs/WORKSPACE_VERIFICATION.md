@@ -8,7 +8,7 @@
 - govulncheck found reachable issues in initial pgx/x-text dependencies. Updated pgx to5.9.2 and x/text to0.39.0; rerun had no reachable vulnerabilities. This is not a security audit or a guarantee against undiscovered issues.
 
 ## Hosted proof (not a mock)
-Against ProofPay project ncnuvnbqcaqwawujltiu using proofpay_runtime via verified TLS:
+Against Pactra project ncnuvnbqcaqwawujltiu using pactra_runtime via verified TLS:
 - Applied0001_workspace.sql and read back tables and migration checksum.
 - Runtime confirmed no schema CREATE or migration-metadata access.
 - Ephemeral test-wallet challenge→signature verification→session→task creation→worker acceptance→logout succeeded.

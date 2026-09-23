@@ -17,7 +17,7 @@ Sort keys, keep check ordering stable and version algorithm changes. Placeholder
 go run ./cmd/server
 go test -race ./...
 go vet ./...
-go build -o bin/proofpay-api ./cmd/server
+go build -o bin/pactra-api ./cmd/server
 ```
 Run from backend/. Server must exit nonzero on invalid configuration or occupied port and handle graceful termination. Readiness means this stateless checker can serve; it does not mean a DB, AI model or blockchain is connected.
 

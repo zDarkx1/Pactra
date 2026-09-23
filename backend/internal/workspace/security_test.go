@@ -82,7 +82,7 @@ func TestDurableAndGlobalChallengeLimits(t *testing.T) {
 	}
 	code, v := call(t, h2, "POST", "/api/v1/auth/challenge", "", map[string]string{"address": addr(ks[0])})
 	expect(t, 429, code, v)
-	if _, e = p.Exec(context.Background(), "UPDATE proofpay.challenge_limits SET window_start=clock_timestamp()-interval '61 seconds' WHERE address=$1", addr(ks[0])); e != nil {
+	if _, e = p.Exec(context.Background(), "UPDATE pactra.challenge_limits SET window_start=clock_timestamp()-interval '61 seconds' WHERE address=$1", addr(ks[0])); e != nil {
 		t.Fatal(e)
 	}
 	challengeFor(t, h2, ks[0])
@@ -143,7 +143,7 @@ func TestTaskBoundsAndFingerprint(t *testing.T) {
 	b, _ := canonicalJSON(m)
 	id, _ := uuid()
 	hash := strings.Repeat("a", 64)
-	_, e = p.Exec(context.Background(), `INSERT INTO proofpay.tasks(id,buyer,worker,primary_arbiter,backup_arbiter,manifest,manifest_json,manifest_hash,created_at,invite_expires_at,delivery_deadline) VALUES($1,$2,$3,$4,$5,$6::text::jsonb,$6::text,$7,$8,$9,$10)`, id, addr(ks[0]), addr(ks[1]), addr(ks[2]), addr(ks[3]), string(b), hash, now, m.InviteExpiresAt, m.DeliveryDeadline)
+	_, e = p.Exec(context.Background(), `INSERT INTO pactra.tasks(id,buyer,worker,primary_arbiter,backup_arbiter,manifest,manifest_json,manifest_hash,created_at,invite_expires_at,delivery_deadline) VALUES($1,$2,$3,$4,$5,$6::text::jsonb,$6::text,$7,$8,$9,$10)`, id, addr(ks[0]), addr(ks[1]), addr(ks[2]), addr(ks[3]), string(b), hash, now, m.InviteExpiresAt, m.DeliveryDeadline)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -163,13 +163,13 @@ func TestRuntimeRoleAndDatabaseConstraints(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	role := "proofpay_test_" + suffix
+	role := "pactra_test_" + suffix
 	ident := pgx.Identifier{role}.Sanitize()
 	if _, e = p.Exec(ctx, "CREATE ROLE "+ident+" NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT"); e != nil {
 		t.Fatal(e)
 	}
 	t.Cleanup(func() { _, _ = p.Exec(ctx, "DROP OWNED BY "+ident); _, _ = p.Exec(ctx, "DROP ROLE "+ident) })
-	if _, e = p.Exec(ctx, "GRANT USAGE ON SCHEMA proofpay TO "+ident+"; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA proofpay TO "+ident); e != nil {
+	if _, e = p.Exec(ctx, "GRANT USAGE ON SCHEMA pactra TO "+ident+"; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA pactra TO "+ident); e != nil {
 		t.Fatal(e)
 	}
 	cfg := p.Config().Copy()
@@ -189,7 +189,7 @@ func TestRuntimeRoleAndDatabaseConstraints(t *testing.T) {
 	worker := login(t, h, ks[1])
 	code, v = call(t, h, "POST", "/api/v1/tasks/"+v["id"].(string)+"/accept", worker, map[string]string{"manifest_hash": v["manifest_hash"].(string)})
 	expect(t, 200, code, v)
-	for _, query := range []string{"CREATE TABLE proofpay.denied(id int)", "CREATE TABLE public.denied(id int)", "INSERT INTO proofpay.accounts(address) VALUES('bad')", `INSERT INTO proofpay.sessions(token_hash,address,expires_at,audience) VALUES(decode(repeat('00',32),'hex'),'0x1111111111111111111111111111111111111111',now(),'["localhost","http://localhost",1]')`} {
+	for _, query := range []string{"CREATE TABLE pactra.denied(id int)", "CREATE TABLE public.denied(id int)", "INSERT INTO pactra.accounts(address) VALUES('bad')", `INSERT INTO pactra.sessions(token_hash,address,expires_at,audience) VALUES(decode(repeat('00',32),'hex'),'0x1111111111111111111111111111111111111111',now(),'["localhost","http://localhost",1]')`} {
 		if _, e = runtime.Exec(ctx, query); e == nil {
 			t.Fatalf("runtime accepted %s", query)
 		}

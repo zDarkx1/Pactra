@@ -1,4 +1,4 @@
-# ProofPay frontend
+# Pactra frontend
 
 Next.js App Router / React / TypeScript. Install from the repository root with `npm ci`, then `npm run dev`. Start Go separately using `cd backend && go run ./cmd/server`.
 

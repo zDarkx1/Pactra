@@ -2,7 +2,7 @@
 
 ## Local gates
 At root: npm test; npm run test:docs; npm run typecheck; npm run build.
-At backend: go test -race ./...; go vet ./...; go build -o bin/proofpay-api ./cmd/server.
+At backend: go test -race ./...; go vet ./...; go build -o bin/pactra-api ./cmd/server.
 
 ## Browser acceptance
 Start both services. Initial missing-placeholder example must fail. Correcting it must pass objective checks while semantic AI remains not_configured. Invalid input must not generate fake results. Editing after a successful report invalidates it. Test narrow mobile and desktop, keyboard navigation, slow/out-of-order responses and backend outage.

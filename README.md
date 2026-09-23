@@ -1,8 +1,8 @@
-# ProofPay
+# Pactra
 
 **Agree on the checks. Pay for accepted work.**
 
-ProofPay is a proposed AI-assisted acceptance and settlement product for small localization jobs. Buyers and workers agree on a source snapshot, requirements and deliverable allocations before work starts. Objective checks are reproducible; semantic AI review is advisory and evidence-linked. Accepted deliverables may eventually be settled independently of disputed work.
+Pactra is a proposed AI-assisted acceptance and settlement product for small localization jobs. Buyers and workers agree on a source snapshot, requirements and deliverable allocations before work starts. Objective checks are reproducible; semantic AI review is advisory and evidence-linked. Accepted deliverables may eventually be settled independently of disputed work.
 
 ## Persistent backend update
 
@@ -28,8 +28,8 @@ This repository is a **team development foundation**, not a finished escrow mark
 Requirements: Node.js 24.x, npm, Go 1.27.1 or a compatible newer Go toolchain. Git is required to clone. No database, wallet or AI key is required for the implemented starter.
 
 ```bash
-git clone https://github.com/zDarkx1/ProofPay.git
-cd ProofPay
+git clone https://github.com/zDarkx1/Pactra.git
+cd Pactra
 npm ci
 ```
 
@@ -88,4 +88,4 @@ go build ./cmd/server
 
 Small feature branches and reviewed PRs. Add a failing regression test before behavior changes; keep API and docs synchronized. Do not put production data, seed phrases, API credentials or private keys in source, test fixtures, screenshots or issues. Read [CONTRIBUTING](CONTRIBUTING.md).
 
-The repository starts private for team development. The owner must grant collaborators access and decide publication/license before submission. ProofPay is a working name; name collisions exist and no trademark clearance is claimed.
+The repository starts private for team development. The owner must grant collaborators access and decide publication/license before submission. Pactra is a working name; name collisions exist and no trademark clearance is claimed.

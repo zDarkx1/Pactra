@@ -110,7 +110,7 @@ func TestAuthFlow(t *testing.T) {
 	token := v["token"].(string)
 	hash := sha256.Sum256([]byte(token))
 	var n int
-	if e := p.QueryRow(context.Background(), "SELECT count(*) FROM proofpay.sessions WHERE token_hash=$1", hash[:]).Scan(&n); e != nil || n != 1 {
+	if e := p.QueryRow(context.Background(), "SELECT count(*) FROM pactra.sessions WHERE token_hash=$1", hash[:]).Scan(&n); e != nil || n != 1 {
 		t.Fatalf("hash storage %d %v", n, e)
 	}
 	code, v = call(t, h, "POST", "/api/v1/auth/verify", "", payload)
@@ -125,7 +125,7 @@ func TestAuthFlow(t *testing.T) {
 	code, v = call(t, h, "GET", "/api/v1/me", token, nil)
 	expect(t, 401, code, v)
 	c = challengeFor(t, h, ks[0])
-	if _, e := p.Exec(context.Background(), "UPDATE proofpay.challenges SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", c["challenge_id"]); e != nil {
+	if _, e := p.Exec(context.Background(), "UPDATE pactra.challenges SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", c["challenge_id"]); e != nil {
 		t.Fatal(e)
 	}
 	code, v = call(t, h, "POST", "/api/v1/auth/verify", "", signed(t, ks[0], c))
@@ -142,7 +142,7 @@ func TestTasksFlowPrivacyAndRaces(t *testing.T) {
 	id := task["id"].(string)
 	hash := task["manifest_hash"].(string)
 	var canonical string
-	if e := p.QueryRow(context.Background(), "SELECT manifest_json FROM proofpay.tasks WHERE id=$1", id).Scan(&canonical); e != nil {
+	if e := p.QueryRow(context.Background(), "SELECT manifest_json FROM pactra.tasks WHERE id=$1", id).Scan(&canonical); e != nil {
 		t.Fatal(e)
 	}
 	digest := sha256.Sum256([]byte(canonical))
@@ -202,7 +202,7 @@ func TestTasksFlowPrivacyAndRaces(t *testing.T) {
 	if v["status"] != "accepted_unfunded" {
 		t.Fatal(v)
 	}
-	if _, e := p.Exec(context.Background(), "UPDATE proofpay.tasks SET manifest_hash=$2 WHERE id=$1", id, strings.Repeat("0", 64)); e == nil {
+	if _, e := p.Exec(context.Background(), "UPDATE pactra.tasks SET manifest_hash=$2 WHERE id=$1", id, strings.Repeat("0", 64)); e == nil {
 		t.Fatal("DB allowed mutation")
 	}
 }

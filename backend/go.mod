@@ -1,4 +1,4 @@
-module proofpay/backend
+module pactra/backend
 
 go 1.27.1
 

@@ -42,11 +42,11 @@ func TestChecks(t *testing.T) {
 		{"placeholder reordered", payload(map[string]string{"a": "{_x} {a2} {_x}"}, map[string]string{"a": "{a2} {_x} {_x}"}, true, []string{}), true, ""},
 		{"placeholder grammar", payload(map[string]string{"a": "{2x} {a-b}"}, map[string]string{"a": "text"}, true, []string{}), true, ""},
 		{"explicit false", payload(map[string]string{"a": "{name}"}, map[string]string{"a": "hello"}, false, []string{}), true, ""},
-		{"required term", payload(map[string]string{"a": "Use ProofPay"}, map[string]string{"a": "Use proofpay"}, true, []string{"ProofPay"}), false, "required_term"},
-		{"term preserved substring", payload(map[string]string{"a": "xProofPayx"}, map[string]string{"a": "yProofPayy"}, true, []string{"ProofPay"}), true, ""},
-		{"term only relevant key", payload(map[string]string{"a": "ProofPay", "b": "hello"}, map[string]string{"a": "ProofPay", "b": "bonjour"}, true, []string{"ProofPay"}), true, ""},
+		{"required term", payload(map[string]string{"a": "Use Pactra"}, map[string]string{"a": "Use pactra"}, true, []string{"Pactra"}), false, "required_term"},
+		{"term preserved substring", payload(map[string]string{"a": "xPactrax"}, map[string]string{"a": "yPactray"}, true, []string{"Pactra"}), true, ""},
+		{"term only relevant key", payload(map[string]string{"a": "Pactra", "b": "hello"}, map[string]string{"a": "Pactra", "b": "bonjour"}, true, []string{"Pactra"}), true, ""},
 		{"empty", payload(map[string]string{"a": "x"}, map[string]string{"a": ""}, true, []string{}), false, "nonempty"},
-		{"whitespace", payload(map[string]string{"a": "x"}, map[string]string{"a": " \t\n\u2003"}, true, []string{}), false, "nonempty"},
+		{"whitespace", payload(map[string]string{"a": "x"}, map[string]string{"a": " 	\n\u2003"}, true, []string{}), false, "nonempty"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -130,7 +130,7 @@ func TestValidation(t *testing.T) {
 		{"long value", mk(map[string]string{"a": strings.Repeat("x", 4001)}, []string{}), 400},
 		{"UTF8 byte limit", mk(map[string]string{"a": strings.Repeat("é", 2001)}, []string{}), 400},
 		{"long submission", payload(one, map[string]string{"a": strings.Repeat("x", 4001)}, true, []string{}), 400},
-		{"31 terms", mk(one, terms), 400}, {"blank term", mk(one, []string{" \t"}), 400}, {"long term", mk(one, []string{strings.Repeat("é", 51)}), 400},
+		{"31 terms", mk(one, terms), 400}, {"blank term", mk(one, []string{" 	"}), 400}, {"long term", mk(one, []string{strings.Repeat("é", 51)}), 400},
 		{"too large", valid + strings.Repeat(" ", 128*1024), 413},
 		{"at body limit", valid + strings.Repeat(" ", 128*1024-len(valid)), 200},
 		{"at value limit", mk(map[string]string{"a": strings.Repeat("x", 4000)}, []string{}), 200},
@@ -200,7 +200,7 @@ func TestHTTP(t *testing.T) {
 }
 func TestDeterministicConcurrent(t *testing.T) {
 	h := NewHandler()
-	body := payload(map[string]string{"z": "{n} ProofPay", "a": "x"}, map[string]string{"z": "{n} ProofPay", "a": "x"}, true, []string{"ProofPay"})
+	body := payload(map[string]string{"z": "{n} Pactra", "a": "x"}, map[string]string{"z": "{n} Pactra", "a": "x"}, true, []string{"Pactra"})
 	want := call(h, "POST", "/api/v1/check", "application/json", body).Body.Bytes()
 	var got struct{ Checks []struct{ ID, Key string } }
 	_ = json.Unmarshal(want, &got)

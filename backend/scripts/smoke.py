@@ -8,7 +8,7 @@ import subprocess
 import time
 import urllib.request
 
-binary = str(Path(__file__).resolve().parents[1] / "bin" / "proofpay")
+binary = str(Path(__file__).resolve().parents[1] / "bin" / "pactra")
 with socket.socket() as sock:
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]
@@ -32,9 +32,9 @@ try:
     with client.open(base + "/ready", timeout=2) as response:
         assert json.load(response) == {"status": "ready", "mode": "stateless-checker"}
     body = json.dumps({
-        "source": {"a": "Hello {name} ProofPay"},
-        "submission": {"a": "Bonjour {name} ProofPay"},
-        "rules": {"preserve_placeholders": True, "required_terms": ["ProofPay"]},
+        "source": {"a": "Hello {name} Pactra"},
+        "submission": {"a": "Bonjour {name} Pactra"},
+        "rules": {"preserve_placeholders": True, "required_terms": ["Pactra"]},
     }).encode()
     request = urllib.request.Request(base + "/api/v1/check", data=body,
                                      headers={"Content-Type": "application/json"})

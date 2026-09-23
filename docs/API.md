@@ -14,9 +14,9 @@ Content-Type: application/json. Maximum body128KiB.
 
 ```json
 {
-  "source": {"greeting":"Hello {name}","brand":"ProofPay"},
-  "submission": {"greeting":"Halo {name}","brand":"ProofPay"},
-  "rules": {"preserve_placeholders":true,"required_terms":["ProofPay"]}
+  "source": {"greeting":"Hello {name}","brand":"Pactra"},
+  "submission": {"greeting":"Halo {name}","brand":"Pactra"},
+  "rules": {"preserve_placeholders":true,"required_terms":["Pactra"]}
 }
 ```
 

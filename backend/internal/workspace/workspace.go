@@ -226,13 +226,13 @@ func (s *server) challenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(r.Context())
-	if _, e = tx.Exec(r.Context(), "INSERT INTO proofpay.accounts(address) VALUES($1) ON CONFLICT DO NOTHING", a); e != nil {
+	if _, e = tx.Exec(r.Context(), "INSERT INTO pactra.accounts(address) VALUES($1) ON CONFLICT DO NOTHING", a); e != nil {
 		fail(w, 503)
 		return
 	}
 	// UPSERT obtains a row lock, serializing limits across processes.
 	var count int
-	e = tx.QueryRow(r.Context(), `INSERT INTO proofpay.challenge_limits(address,window_start,count) VALUES($1,clock_timestamp(),1) ON CONFLICT(address) DO UPDATE SET window_start=CASE WHEN proofpay.challenge_limits.window_start<=clock_timestamp()-interval '1 minute' THEN clock_timestamp() ELSE proofpay.challenge_limits.window_start END,count=CASE WHEN proofpay.challenge_limits.window_start<=clock_timestamp()-interval '1 minute' THEN 1 ELSE proofpay.challenge_limits.count+1 END WHERE proofpay.challenge_limits.window_start<=clock_timestamp()-interval '1 minute' OR proofpay.challenge_limits.count<5 RETURNING count`, a).Scan(&count)
+	e = tx.QueryRow(r.Context(), `INSERT INTO pactra.challenge_limits(address,window_start,count) VALUES($1,clock_timestamp(),1) ON CONFLICT(address) DO UPDATE SET window_start=CASE WHEN pactra.challenge_limits.window_start<=clock_timestamp()-interval '1 minute' THEN clock_timestamp() ELSE pactra.challenge_limits.window_start END,count=CASE WHEN pactra.challenge_limits.window_start<=clock_timestamp()-interval '1 minute' THEN 1 ELSE pactra.challenge_limits.count+1 END WHERE pactra.challenge_limits.window_start<=clock_timestamp()-interval '1 minute' OR pactra.challenge_limits.count<5 RETURNING count`, a).Scan(&count)
 	if errors.Is(e, pgx.ErrNoRows) {
 		fail(w, 429)
 		return
@@ -253,8 +253,8 @@ func (s *server) challenge(w http.ResponseWriter, r *http.Request) {
 	}
 	now = now.Truncate(time.Second)
 	expiry := now.Add(5 * time.Minute)
-	message := fmt.Sprintf("%s wants you to sign in with your Ethereum account:\n%s\n\nSign in to ProofPay.\n\nURI: %s\nVersion: 1\nChain ID: %d\nNonce: %s\nIssued At: %s\nExpiration Time: %s", s.cfg.Domain, common.HexToAddress(a).Hex(), s.cfg.URI, s.cfg.ChainID, nonce, now.Format(time.RFC3339), expiry.Format(time.RFC3339))
-	if _, e = tx.Exec(r.Context(), "INSERT INTO proofpay.challenges(id,address,message,expires_at) VALUES($1,$2,$3,$4)", id, a, message, expiry); e != nil {
+	message := fmt.Sprintf("%s wants you to sign in with your Ethereum account:\n%s\n\nSign in to Pactra.\n\nURI: %s\nVersion: 1\nChain ID: %d\nNonce: %s\nIssued At: %s\nExpiration Time: %s", s.cfg.Domain, common.HexToAddress(a).Hex(), s.cfg.URI, s.cfg.ChainID, nonce, now.Format(time.RFC3339), expiry.Format(time.RFC3339))
+	if _, e = tx.Exec(r.Context(), "INSERT INTO pactra.challenges(id,address,message,expires_at) VALUES($1,$2,$3,$4)", id, a, message, expiry); e != nil {
 		fail(w, 503)
 		return
 	}
@@ -308,7 +308,7 @@ func (s *server) verify(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(r.Context())
 	var a, msg string
-	e = tx.QueryRow(r.Context(), "SELECT address,message FROM proofpay.challenges WHERE id=$1 AND NOT consumed AND expires_at>clock_timestamp() FOR UPDATE", in.ChallengeID).Scan(&a, &msg)
+	e = tx.QueryRow(r.Context(), "SELECT address,message FROM pactra.challenges WHERE id=$1 AND NOT consumed AND expires_at>clock_timestamp() FOR UPDATE", in.ChallengeID).Scan(&a, &msg)
 	if errors.Is(e, pgx.ErrNoRows) {
 		fail(w, 401)
 		return
@@ -335,7 +335,7 @@ func (s *server) verify(w http.ResponseWriter, r *http.Request) {
 	}
 	hash := sha256.Sum256([]byte(token))
 	expiry := time.Now().UTC().Add(24 * time.Hour)
-	result, e := tx.Exec(r.Context(), "UPDATE proofpay.challenges SET consumed=true WHERE id=$1 AND NOT consumed AND expires_at>clock_timestamp()", in.ChallengeID)
+	result, e := tx.Exec(r.Context(), "UPDATE pactra.challenges SET consumed=true WHERE id=$1 AND NOT consumed AND expires_at>clock_timestamp()", in.ChallengeID)
 	if e != nil {
 		fail(w, 503)
 		return
@@ -344,7 +344,7 @@ func (s *server) verify(w http.ResponseWriter, r *http.Request) {
 		fail(w, 401)
 		return
 	}
-	if _, e = tx.Exec(r.Context(), "INSERT INTO proofpay.sessions(token_hash,address,expires_at,audience) VALUES($1,$2,$3,$4)", hash[:], a, expiry, s.audience()); e != nil {
+	if _, e = tx.Exec(r.Context(), "INSERT INTO pactra.sessions(token_hash,address,expires_at,audience) VALUES($1,$2,$3,$4)", hash[:], a, expiry, s.audience()); e != nil {
 		fail(w, 503)
 		return
 	}
@@ -373,7 +373,7 @@ func (s *server) auth(next authed) http.HandlerFunc {
 		}
 		hash := sha256.Sum256([]byte(token))
 		var a string
-		e := s.pool.QueryRow(r.Context(), "SELECT address FROM proofpay.sessions WHERE token_hash=$1 AND audience=$2 AND expires_at>clock_timestamp()", hash[:], s.audience()).Scan(&a)
+		e := s.pool.QueryRow(r.Context(), "SELECT address FROM pactra.sessions WHERE token_hash=$1 AND audience=$2 AND expires_at>clock_timestamp()", hash[:], s.audience()).Scan(&a)
 		if errors.Is(e, pgx.ErrNoRows) {
 			fail(w, 401)
 			return
@@ -394,7 +394,7 @@ func (s *server) logout(w http.ResponseWriter, r *http.Request, a string) {
 		return
 	}
 	h := sha256.Sum256([]byte(bearer(r)))
-	if _, e := s.pool.Exec(r.Context(), "DELETE FROM proofpay.sessions WHERE token_hash=$1 AND audience=$2", h[:], s.audience()); e != nil {
+	if _, e := s.pool.Exec(r.Context(), "DELETE FROM pactra.sessions WHERE token_hash=$1 AND audience=$2", h[:], s.audience()); e != nil {
 		fail(w, 503)
 		return
 	}

@@ -42,7 +42,7 @@ func TestListCapPersistenceAndSessionExpiry(t *testing.T) {
 		t.Fatal("list not newest first")
 	}
 	hash := sha256.Sum256([]byte(token))
-	if _, e = p.Exec(context.Background(), "UPDATE proofpay.sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE token_hash=$1", hash[:]); e != nil {
+	if _, e = p.Exec(context.Background(), "UPDATE pactra.sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE token_hash=$1", hash[:]); e != nil {
 		t.Fatal(e)
 	}
 	code, v = call(t, fresh, "GET", "/api/v1/me", token, nil)

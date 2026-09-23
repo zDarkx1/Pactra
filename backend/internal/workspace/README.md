@@ -1,7 +1,7 @@
 Persistent workspace contract
 =============================
 
-Import proofpay/backend/internal/workspace.
+Import pactra/backend/internal/workspace.
 
     type Config struct {
         Domain, URI string
@@ -18,12 +18,12 @@ ChainID must be positive. Arbiters must be nonzero EVM addresses. An empty team
 allows login/read but task creation returns 503.
 
 Owner applies backend/migrations/0001_workspace.sql once, before runtime start.
-This creates only proofpay tables, revokes PUBLIC privileges on proofpay AND
+This creates only pactra tables, revokes PUBLIC privileges on pactra AND
 public schemas, and installs an immutable-task trigger. Review impact of public
 schema revocation before applying to a shared database. Runtime needs only:
 
-    GRANT USAGE ON SCHEMA proofpay TO your_runtime_role;
-    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA proofpay
+    GRANT USAGE ON SCHEMA pactra TO your_runtime_role;
+    GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA pactra
         TO your_runtime_role;
 
 Do not make runtime an owner or grant CREATE/schema modification rights.
@@ -46,7 +46,7 @@ Authentication
 POST /auth/challenge {"address":"0x..."}
   201: {challenge_id, message, expires_at}
   message is the exact stored EIP-4361 SIWE message: configured domain, EIP-55
-  account, statement "Sign in to ProofPay.", configured URI, version 1, chain,
+  account, statement "Sign in to Pactra.", configured URI, version 1, chain,
   random 32-character hexadecimal nonce, UTC issued/expiry timestamps (5 min).
   Sign exactly message using personal_sign / EIP-191. Do not reconstruct it.
   Durable per-account five/minute fixed-window limit uses an atomic row-locking
@@ -144,12 +144,12 @@ Accept/cancel races have exactly one winner, with the loser returning 409.
 
 Verification and operations
 ---------------------------
-Local integration tests use only TEST_DATABASE_URL. They DROP the proofpay schema,
+Local integration tests use only TEST_DATABASE_URL. They DROP the pactra schema,
 reapply migration, and create/drop a temporary restricted role; isolated test
 DB owner privileges are required. NEVER point this at a real workspace DB.
 
-    set -a; source /tmp/proofpay-test-db.env; set +a
-    unset PROOFPAY_LIVE_TEST_DATABASE_URL
+    set -a; source /tmp/pactra-test-db.env; set +a
+    unset PACTRA_LIVE_TEST_DATABASE_URL
     /root/.local/toolchains/go1.27.1/go/bin/go test -race -count=1 ./internal/workspace
     /root/.local/toolchains/go1.27.1/go/bin/go vet ./internal/workspace
 
@@ -159,7 +159,7 @@ verify and accept/cancel, role privacy, runtime DML-only privileges, SQL
 constraints, exact JSON names/Unicode, audience isolation, input bounds,
 global/durable/IP limits, cache capacity/TTL and canonical JSON/hash checks.
 Review regression tests were observed failing before fixes and passing after.
-The separate hosted smoke requires PROOFPAY_LIVE_TEST_DATABASE_URL explicitly;
+The separate hosted smoke requires PACTRA_LIVE_TEST_DATABASE_URL explicitly;
 it is not part of local verification and never applies/drops schema.
 
 No funding, submissions, blockchain RPC or provider calls in this module.

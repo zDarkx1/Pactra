@@ -7,7 +7,7 @@ import { buildRawRequest, invalidateResult } from '../lib/check-input';
 import { isCheckResponse } from '../lib/check-response';
 import type { CheckInput, ViewState } from '../lib/types';
 
-const defaults: CheckInput = { source: '{"greeting":"Hello {name}","brand":"ProofPay"}', submission: '{"greeting":"Halo","brand":"ProofPay"}', preservePlaceholders: true, requiredTerms: 'ProofPay' };
+const defaults: CheckInput = { source: '{"greeting":"Hello {name}","brand":"Pactra"}', submission: '{"greeting":"Halo","brand":"Pactra"}', preservePlaceholders: true, requiredTerms: 'Pactra' };
 const labels: Record<string, string> = { key_parity: 'Key parity', nonempty: 'Non-empty translation', placeholders: 'Placeholder preservation', required_term: 'Required term' };
 
 export default function Workbench() {
@@ -56,7 +56,7 @@ export default function Workbench() {
   return <div className="shell">
     <a className="skip" href="#workbench">Skip to workbench</a>
     <aside className="sidebar" aria-label="Workspace overview">
-      <a href="/" className="brand"><span className="brand-mark" aria-hidden="true">P<span>✓</span></span>ProofPay</a>
+      <a href="/" className="brand"><span className="brand-mark" aria-hidden="true">P<span>✓</span></span>Pactra</a>
       <div className="workspace-label">LOCAL WORKSPACE <span className="dot" /></div>
       <div className="active-nav"><span aria-hidden="true">▦</span> Localization checker <span className="nav-index">01</span></div>
       <div className="roadmap"><p className="eyebrow">PLANNED MILESTONES</p>
@@ -85,7 +85,7 @@ export default function Workbench() {
                 <p className="field-help" id="terms-help">Case-sensitive terms must remain in the corresponding source key’s translation.</p>
               </div>
               <div className="sample-note" id="sample-help"><span aria-hidden="true">↳</span> The starter sample is missing {'{name}'}. Run it to inspect the failure.</div>
-              <div className="actions"><button className="primary" type="submit" disabled={view.loading}>{view.loading ? 'Running checks…' : 'Run checks'}<span aria-hidden="true">↗</span></button><button className="secondary" type="button" onClick={() => edit({ ...defaults, submission: '{"greeting":"Halo {name}","brand":"ProofPay"}' })}>Fix sample</button><button className="reset" type="button" onClick={() => edit({ ...defaults })}>Reset</button></div>
+              <div className="actions"><button className="primary" type="submit" disabled={view.loading}>{view.loading ? 'Running checks…' : 'Run checks'}<span aria-hidden="true">↗</span></button><button className="secondary" type="button" onClick={() => edit({ ...defaults, submission: '{"greeting":"Halo {name}","brand":"Pactra"}' })}>Fix sample</button><button className="reset" type="button" onClick={() => edit({ ...defaults })}>Reset</button></div>
             </form>
           </section>
           <section className="results-panel" aria-labelledby="results-title" aria-busy={view.loading}>
@@ -99,7 +99,7 @@ export default function Workbench() {
         </div>
         <SemanticReview key={JSON.stringify(input)} body={reviewBody} />
         <section className="scope-details" aria-label="Checker scope"><div><span>01 / STRUCTURE</span><h3>Matching keys</h3><p>Find missing or extra keys and empty translations.</p></div><div><span>02 / CONSTRAINTS</span><h3>Preserved intent markers</h3><p>Check placeholder tokens and exact required terms.</p></div><div><span>03 / HUMAN JUDGMENT</span><h3>Meaning still needs you</h3><p>Deterministic checks do not assess meaning. Request the separate advisory AI review when needed.</p></div></section>
-        <footer className="page-footer"><span>ProofPay <span className="footer-separator">/</span> Local checker starter</span><span>No persistence. Results clear when inputs change.</span></footer>
+        <footer className="page-footer"><span>Pactra <span className="footer-separator">/</span> Local checker starter</span><span>No persistence. Results clear when inputs change.</span></footer>
       </main>
     </div>
   </div>;
