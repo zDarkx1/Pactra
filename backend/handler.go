@@ -1,4 +1,4 @@
-// Package backend provides ProofPay's stateless localization acceptance checker.
+// Package backend provides Pactra's stateless localization acceptance checker.
 package backend
 
 import (

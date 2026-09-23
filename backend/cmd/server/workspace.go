@@ -7,7 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"proofpay/backend/internal/workspace"
+	"pactra/backend/internal/workspace"
 	"strconv"
 	"strings"
 	"time"
@@ -15,9 +15,9 @@ import (
 
 func workspaceEnvironment(get func(string) string) (string, workspace.Config, error) {
 	dsn := get("DATABASE_URL")
-	cfg := workspace.Config{Domain: get("PROOFPAY_AUTH_DOMAIN"), URI: get("PROOFPAY_AUTH_URI")}
-	chain := get("PROOFPAY_CHAIN_ID")
-	arbiters := get("PROOFPAY_ARBITERS")
+	cfg := workspace.Config{Domain: get("PACTRA_AUTH_DOMAIN"), URI: get("PACTRA_AUTH_URI")}
+	chain := get("PACTRA_CHAIN_ID")
+	arbiters := get("PACTRA_ARBITERS")
 	invalid := errors.New("workspace requires DATABASE_URL, valid auth domain/URI and positive chain ID; remote DB requires sslmode=verify-full")
 	if dsn == "" && cfg.Domain == "" && cfg.URI == "" && chain == "" && arbiters == "" {
 		return "", cfg, nil
@@ -105,7 +105,7 @@ func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) 
 		return nil, nil, errors.New("invalid workspace auth configuration")
 	}
 	var schema bool
-	if err = pool.QueryRow(probe, "SELECT to_regclass('proofpay.tasks') IS NOT NULL").Scan(&schema); err != nil || !schema {
+	if err = pool.QueryRow(probe, "SELECT to_regclass('pactra.tasks') IS NOT NULL").Scan(&schema); err != nil || !schema {
 		pool.Close()
 		return nil, nil, errors.New("workspace migration is missing")
 	}

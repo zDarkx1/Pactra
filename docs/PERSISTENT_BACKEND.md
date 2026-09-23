@@ -14,18 +14,18 @@ This increment adds wallet-authenticated, persistent invitations and immutable a
 - Accepted state is explicitly `accepted_unfunded`. There is no API to mark funded, paid or settled manually.
 
 ## Local PostgreSQL workflow
-Use an isolated development database. Never set TEST_DATABASE_URL to the hosted ProofPay database: integration tests may destroy/recreate the proofpay schema.
+Use an isolated development database. Never set TEST_DATABASE_URL to the hosted Pactra database: integration tests may destroy/recreate the pactra schema.
 
 1. Apply `backend/migrations/0001_workspace.sql` using an administrative migration connection.
-2. Create a runtime database role with no SUPERUSER/CREATEDB/CREATEROLE/BYPASSRLS. Grant USAGE on schema proofpay and required table DML, never schema CREATE or ownership.
-3. Configure DATABASE_URL, PROOFPAY_AUTH_DOMAIN, PROOFPAY_AUTH_URI and PROOFPAY_CHAIN_ID together. Partial configuration fails startup. Remote DATABASE_URL must use sslmode=verify-full.
-4. Set PROOFPAY_ARBITERS to comma-separated team-approved wallet addresses to enable task creation. Empty is safe.
+2. Create a runtime database role with no SUPERUSER/CREATEDB/CREATEROLE/BYPASSRLS. Grant USAGE on schema pactra and required table DML, never schema CREATE or ownership.
+3. Configure DATABASE_URL, PACTRA_AUTH_DOMAIN, PACTRA_AUTH_URI and PACTRA_CHAIN_ID together. Partial configuration fails startup. Remote DATABASE_URL must use sslmode=verify-full.
+4. Set PACTRA_ARBITERS to comma-separated team-approved wallet addresses to enable task creation. Empty is safe.
 5. Run `go run ./cmd/server` from backend after exporting configuration. Go does not auto-load dotenv files.
 
 For localhost development use domain localhost:3000, URI http://localhost:3000 and a deliberately selected local chain ID (e.g.31337). These are local development settings, not a verified BOT Chain production configuration.
 
 ## Isolation and trust
-The `proofpay` PostgreSQL schema is private and not exposed through Supabase's public Data API. Next should call Go with a verified session; no admin/service-role/PAT credentials in the frontend. Go enforces participants on every task read/write. Runtime DML permission does not eliminate application-level authorization requirements. A compromised runtime credential can access that schema: protect it and do not distribute it broadly.
+The `pactra` PostgreSQL schema is private and not exposed through Supabase's public Data API. Next should call Go with a verified session; no admin/service-role/PAT credentials in the frontend. Go enforces participants on every task read/write. Runtime DML permission does not eliminate application-level authorization requirements. A compromised runtime credential can access that schema: protect it and do not distribute it broadly.
 
 Supabase session pooler port5432 is used for IPv4 development connectivity. TLS client verification uses the Supabase CA plus hostname checking. An internal pooler-to-Postgres pg_stat_ssl row can report false even while the application-to-pooler connection is verified TLS; inspect client TLS separately.
 

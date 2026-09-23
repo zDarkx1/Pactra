@@ -1,4 +1,4 @@
-// Command proofpay runs the local stateless localization checker.
+// Command pactra runs the local stateless localization checker.
 package main
 
 import (
@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"proofpay/backend"
+	"pactra/backend"
 )
 
 func address(getenv func(string) string) (string, error) {
@@ -41,7 +41,7 @@ func address(getenv func(string) string) (string, error) {
 	return net.JoinHostPort(host, strconv.Itoa(n)), nil
 }
 func aiConfig(getenv func(string) string) backend.AIConfig {
-	return backend.AIConfig{Endpoint: getenv("PROOFPAY_AI_ENDPOINT"), Model: getenv("PROOFPAY_AI_MODEL"), APIKey: getenv("PROOFPAY_AI_KEY")}
+	return backend.AIConfig{Endpoint: getenv("PACTRA_AI_ENDPOINT"), Model: getenv("PACTRA_AI_MODEL"), APIKey: getenv("PACTRA_AI_KEY")}
 }
 func run(ctx context.Context, addr string) error { return runWithAI(ctx, addr, backend.AIConfig{}) }
 func runWithAI(ctx context.Context, addr string, config backend.AIConfig) error {

@@ -159,13 +159,13 @@ func (s *server) create(w http.ResponseWriter, r *http.Request, a string) {
 	}
 	defer tx.Rollback(r.Context())
 	for _, p := range []string{m.Worker, m.PrimaryArbiter, m.BackupArbiter} {
-		if _, e = tx.Exec(r.Context(), "INSERT INTO proofpay.accounts(address) VALUES($1) ON CONFLICT DO NOTHING", p); e != nil {
+		if _, e = tx.Exec(r.Context(), "INSERT INTO pactra.accounts(address) VALUES($1) ON CONFLICT DO NOTHING", p); e != nil {
 			fail(w, 503)
 			return
 		}
 	}
 	task := Task{ID: id, Status: "invited", Manifest: b, ManifestHash: hex.EncodeToString(hash[:]), CreatedAt: now, InviteExpiresAt: m.InviteExpiresAt}
-	_, e = tx.Exec(r.Context(), `INSERT INTO proofpay.tasks(id,buyer,worker,primary_arbiter,backup_arbiter,manifest,manifest_json,manifest_hash,created_at,invite_expires_at,delivery_deadline) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, a, m.Worker, m.PrimaryArbiter, m.BackupArbiter, string(b), string(b), task.ManifestHash, now, m.InviteExpiresAt, m.DeliveryDeadline)
+	_, e = tx.Exec(r.Context(), `INSERT INTO pactra.tasks(id,buyer,worker,primary_arbiter,backup_arbiter,manifest,manifest_json,manifest_hash,created_at,invite_expires_at,delivery_deadline) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, a, m.Worker, m.PrimaryArbiter, m.BackupArbiter, string(b), string(b), task.ManifestHash, now, m.InviteExpiresAt, m.DeliveryDeadline)
 	if e != nil {
 		fail(w, 503)
 		return
@@ -193,7 +193,7 @@ func (s *server) get(w http.ResponseWriter, r *http.Request, a string) {
 		fail(w, 404)
 		return
 	}
-	t, e := scanTask(s.pool.QueryRow(r.Context(), "SELECT "+taskColumns+" FROM proofpay.tasks WHERE id=$1 AND "+participant, id, a))
+	t, e := scanTask(s.pool.QueryRow(r.Context(), "SELECT "+taskColumns+" FROM pactra.tasks WHERE id=$1 AND "+participant, id, a))
 	if errors.Is(e, pgx.ErrNoRows) {
 		fail(w, 404)
 		return
@@ -205,7 +205,7 @@ func (s *server) get(w http.ResponseWriter, r *http.Request, a string) {
 	respond(w, 200, t)
 }
 func (s *server) list(w http.ResponseWriter, r *http.Request, a string) {
-	rows, e := s.pool.Query(r.Context(), "SELECT "+taskColumns+" FROM proofpay.tasks WHERE buyer=$1 OR worker=$1 ORDER BY created_at DESC,id DESC LIMIT 50", a)
+	rows, e := s.pool.Query(r.Context(), "SELECT "+taskColumns+" FROM pactra.tasks WHERE buyer=$1 OR worker=$1 ORDER BY created_at DESC,id DESC LIMIT 50", a)
 	if e != nil {
 		fail(w, 503)
 		return
@@ -256,7 +256,7 @@ func (s *server) transition(w http.ResponseWriter, r *http.Request, a string, ac
 	defer tx.Rollback(r.Context())
 	var buyer, worker, status, stored string
 	var unexpired bool
-	e = tx.QueryRow(r.Context(), "SELECT buyer,worker,status,manifest_hash,invite_expires_at>clock_timestamp() FROM proofpay.tasks WHERE id=$1 AND "+participant+" FOR UPDATE", id, a).Scan(&buyer, &worker, &status, &stored, &unexpired)
+	e = tx.QueryRow(r.Context(), "SELECT buyer,worker,status,manifest_hash,invite_expires_at>clock_timestamp() FROM pactra.tasks WHERE id=$1 AND "+participant+" FOR UPDATE", id, a).Scan(&buyer, &worker, &status, &stored, &unexpired)
 	if errors.Is(e, pgx.ErrNoRows) {
 		fail(w, 404)
 		return
@@ -277,7 +277,7 @@ func (s *server) transition(w http.ResponseWriter, r *http.Request, a string, ac
 	if accept {
 		target = "accepted_unfunded"
 	}
-	query := "UPDATE proofpay.tasks SET status=$2 WHERE id=$1 AND status='invited'"
+	query := "UPDATE pactra.tasks SET status=$2 WHERE id=$1 AND status='invited'"
 	if accept {
 		query += " AND invite_expires_at>clock_timestamp()"
 	}
@@ -290,7 +290,7 @@ func (s *server) transition(w http.ResponseWriter, r *http.Request, a string, ac
 		fail(w, 409)
 		return
 	}
-	t, e := scanTask(tx.QueryRow(r.Context(), "SELECT "+taskColumns+" FROM proofpay.tasks WHERE id=$1", id))
+	t, e := scanTask(tx.QueryRow(r.Context(), "SELECT "+taskColumns+" FROM pactra.tasks WHERE id=$1", id))
 	if e != nil {
 		fail(w, 503)
 		return

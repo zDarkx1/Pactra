@@ -16,3 +16,6 @@ contracts/broadcast/
 .DS_Store
 playwright-report/
 test-results/
+
+agents/
+*/TASK.md

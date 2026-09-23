@@ -17,7 +17,7 @@ func TestReviewSessionAudience(t *testing.T) {
 	token := login(t, h, ks[0])
 	hash := sha256.Sum256([]byte(token))
 	var audience string
-	if e := p.QueryRow(context.Background(), "SELECT audience FROM proofpay.sessions WHERE token_hash=$1", hash[:]).Scan(&audience); e != nil {
+	if e := p.QueryRow(context.Background(), "SELECT audience FROM pactra.sessions WHERE token_hash=$1", hash[:]).Scan(&audience); e != nil {
 		t.Fatal(e)
 	}
 	if audience != `["localhost:8080","http://localhost:8080",1]` {
@@ -188,7 +188,7 @@ func TestReviewGlobalSuccessCeiling(t *testing.T) {
 		}
 	}
 	var stored int
-	if e := p.QueryRow(context.Background(), "SELECT count(*) FROM proofpay.challenges").Scan(&stored); e != nil {
+	if e := p.QueryRow(context.Background(), "SELECT count(*) FROM pactra.challenges").Scan(&stored); e != nil {
 		t.Fatal(e)
 	}
 	if n != 60 || stored != 60 {

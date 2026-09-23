@@ -10,9 +10,9 @@ Limit16KiB,20keys per object, one in-flight request per Go handler and10-second 
 The integration sends store:false, uses no tools, never signs transactions and never authorizes payment. Redirects denied, endpoint restricted to HTTPS Azure services.ai.azure.com Responses path. There is no automatic retry or mock-success fallback.
 
 ## Configuration (Go process environment only)
-PROOFPAY_AI_ENDPOINT=https://YOUR-RESOURCE.services.ai.azure.com/openai/v1/responses
-PROOFPAY_AI_MODEL=gpt-6-astra
-PROOFPAY_AI_KEY=<server-side secret>
+PACTRA_AI_ENDPOINT=https://YOUR-RESOURCE.services.ai.azure.com/openai/v1/responses
+PACTRA_AI_MODEL=gpt-6-astra
+PACTRA_AI_KEY=<server-side secret>
 
 All three must be set or all empty. Invalid partial config fails startup. The key is not bundled or committed. backend/.env.local is ignored and NOT automatically loaded by Go. Load through your process supervisor or shell; Next uses only GO_API_URL pointing to Go. Never use NEXT_PUBLIC_ for credentials.
 

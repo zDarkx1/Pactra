@@ -3,6 +3,7 @@ export const runtime='nodejs';
 export const maxDuration=40;
 const fail=(status:number,code:string,message:string)=>Response.json({error:{code,message}},{status,headers:{'Cache-Control':'no-store'}});
 export async function POST(request:Request){
+ if(process.env.NODE_ENV==='production')return fail(503,'AI_DISABLED','Public AI review is disabled until authenticated per-user budgets are available.');
  if(request.headers.get('sec-fetch-site')==='cross-site')return fail(403,'ORIGIN_REJECTED','Cross-site requests are not allowed.');
  if(request.headers.get('content-type')?.split(';')[0].trim().toLowerCase()!=='application/json')return fail(415,'INVALID_TYPE','Send JSON.');
  let body:string;

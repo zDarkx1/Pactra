@@ -15,6 +15,6 @@ The previously inspected guidebook allows original ideas, teams of one to three 
 - [ ] Official BOT Chain Mainnet launch write-up.
 - [ ] BOT Chain branding linking to botchain.ai and explorer.
 
-Private repo must be accessible to judges; confirm requirements and publish only with owner approval. Name collision exists for ProofPay; do not claim original naming. Arrange gas with organizer and confirm hosting/subdomain acceptance. No deployment address or transaction may be invented.
+Private repo must be accessible to judges; confirm requirements and publish only with owner approval. Name collision exists for Pactra; do not claim original naming. Arrange gas with organizer and confirm hosting/subdomain acceptance. No deployment address or transaction may be invented.
 
 Rubric previously inspected: working contract35; wallet/main action30; clarity/originality20; tagged X post15. These are organizer criteria, not predicted project scores. A checker-only starter is NOT a complete qualifying submission.

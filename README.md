@@ -1,10 +1,12 @@
-# ProofPay
+# Pactra
 
 **Agree on the checks. Pay for accepted work.**
 
-ProofPay is a proposed AI-assisted acceptance and settlement product for small localization jobs. Buyers and workers agree on a source snapshot, requirements and deliverable allocations before work starts. Objective checks are reproducible; semantic AI review is advisory and evidence-linked. Accepted deliverables may eventually be settled independently of disputed work.
+Pactra is a proposed AI-assisted acceptance and settlement product for small localization jobs. Buyers and workers agree on a source snapshot, requirements and deliverable allocations before work starts. Objective checks are reproducible; semantic AI review is advisory and evidence-linked. Accepted deliverables may eventually be settled independently of disputed work.
 
 ## Persistent backend update
+
+Existing deployments: follow the [Pactra rename cutover](docs/RENAMING.md) before running the renamed backend.
 
 Wallet login/session APIs and persistent private task invitations, manifest fingerprints, worker acceptance and pre-acceptance cancellation are now implemented. Read [persistent backend](docs/PERSISTENT_BACKEND.md), [frontend handoff](docs/FRONTEND_WORKSPACE_HANDOFF.md), [exact workspace API](backend/internal/workspace/README.md), [Supabase setup](docs/SUPABASE.md) and [operations](docs/BACKEND_OPERATIONS.md). Frontend wallet/task screens are not implemented. Task creation requires real team-approved arbiter wallets in server configuration; empty configuration fails closed. Accepted tasks remain **unfunded**.
 
@@ -28,8 +30,8 @@ This repository is a **team development foundation**, not a finished escrow mark
 Requirements: Node.js 24.x, npm, Go 1.27.1 or a compatible newer Go toolchain. Git is required to clone. No database, wallet or AI key is required for the implemented starter.
 
 ```bash
-git clone https://github.com/zDarkx1/ProofPay.git
-cd ProofPay
+git clone https://github.com/zDarkx1/Pactra.git
+cd Pactra
 npm ci
 ```
 
@@ -88,4 +90,4 @@ go build ./cmd/server
 
 Small feature branches and reviewed PRs. Add a failing regression test before behavior changes; keep API and docs synchronized. Do not put production data, seed phrases, API credentials or private keys in source, test fixtures, screenshots or issues. Read [CONTRIBUTING](CONTRIBUTING.md).
 
-The repository starts private for team development. The owner must grant collaborators access and decide publication/license before submission. ProofPay is a working name; name collisions exist and no trademark clearance is claimed.
+The repository starts private for team development. The owner must grant collaborators access and decide publication/license before submission. Pactra is a working name; name collisions exist and no trademark clearance is claimed.

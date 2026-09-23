@@ -42,9 +42,9 @@ func TestChecks(t *testing.T) {
 		{"placeholder reordered", payload(map[string]string{"a": "{_x} {a2} {_x}"}, map[string]string{"a": "{a2} {_x} {_x}"}, true, []string{}), true, ""},
 		{"placeholder grammar", payload(map[string]string{"a": "{2x} {a-b}"}, map[string]string{"a": "text"}, true, []string{}), true, ""},
 		{"explicit false", payload(map[string]string{"a": "{name}"}, map[string]string{"a": "hello"}, false, []string{}), true, ""},
-		{"required term", payload(map[string]string{"a": "Use ProofPay"}, map[string]string{"a": "Use proofpay"}, true, []string{"ProofPay"}), false, "required_term"},
-		{"term preserved substring", payload(map[string]string{"a": "xProofPayx"}, map[string]string{"a": "yProofPayy"}, true, []string{"ProofPay"}), true, ""},
-		{"term only relevant key", payload(map[string]string{"a": "ProofPay", "b": "hello"}, map[string]string{"a": "ProofPay", "b": "bonjour"}, true, []string{"ProofPay"}), true, ""},
+		{"required term", payload(map[string]string{"a": "Use Pactra"}, map[string]string{"a": "Use pactra"}, true, []string{"Pactra"}), false, "required_term"},
+		{"term preserved substring", payload(map[string]string{"a": "xPactrax"}, map[string]string{"a": "yPactray"}, true, []string{"Pactra"}), true, ""},
+		{"term only relevant key", payload(map[string]string{"a": "Pactra", "b": "hello"}, map[string]string{"a": "Pactra", "b": "bonjour"}, true, []string{"Pactra"}), true, ""},
 		{"empty", payload(map[string]string{"a": "x"}, map[string]string{"a": ""}, true, []string{}), false, "nonempty"},
 		{"whitespace", payload(map[string]string{"a": "x"}, map[string]string{"a": " \t\n\u2003"}, true, []string{}), false, "nonempty"},
 	}
@@ -200,7 +200,7 @@ func TestHTTP(t *testing.T) {
 }
 func TestDeterministicConcurrent(t *testing.T) {
 	h := NewHandler()
-	body := payload(map[string]string{"z": "{n} ProofPay", "a": "x"}, map[string]string{"z": "{n} ProofPay", "a": "x"}, true, []string{"ProofPay"})
+	body := payload(map[string]string{"z": "{n} Pactra", "a": "x"}, map[string]string{"z": "{n} Pactra", "a": "x"}, true, []string{"Pactra"})
 	want := call(h, "POST", "/api/v1/check", "application/json", body).Body.Bytes()
 	var got struct{ Checks []struct{ ID, Key string } }
 	_ = json.Unmarshal(want, &got)

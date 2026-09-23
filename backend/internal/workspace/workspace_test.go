@@ -18,7 +18,7 @@ func testPool(t *testing.T) *pgxpool.Pool {
 		t.Fatal(e)
 	}
 	t.Cleanup(p.Close)
-	if _, e = p.Exec(context.Background(), "DROP SCHEMA IF EXISTS proofpay CASCADE"); e != nil {
+	if _, e = p.Exec(context.Background(), "DROP SCHEMA IF EXISTS pactra CASCADE"); e != nil {
 		t.Fatal(e)
 	}
 	sql, e := os.ReadFile("../../migrations/0001_workspace.sql")

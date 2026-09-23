@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
-	"proofpay/backend"
+	"pactra/backend"
 	"strings"
 	"testing"
 )
 
 func TestAIEnvironmentAndStartupValidation(t *testing.T) {
-	env := map[string]string{"PROOFPAY_AI_ENDPOINT": "https://unit.services.ai.azure.com/openai/v1/responses", "PROOFPAY_AI_MODEL": "test-model", "PROOFPAY_AI_KEY": "fake-test-key"}
+	env := map[string]string{"PACTRA_AI_ENDPOINT": "https://unit.services.ai.azure.com/openai/v1/responses", "PACTRA_AI_MODEL": "test-model", "PACTRA_AI_KEY": "fake-test-key"}
 	got := aiConfig(func(k string) string { return env[k] })
-	if got.Endpoint != env["PROOFPAY_AI_ENDPOINT"] || got.Model != env["PROOFPAY_AI_MODEL"] || got.APIKey != env["PROOFPAY_AI_KEY"] {
+	if got.Endpoint != env["PACTRA_AI_ENDPOINT"] || got.Model != env["PACTRA_AI_MODEL"] || got.APIKey != env["PACTRA_AI_KEY"] {
 		t.Fatal("config mapping")
 	}
 	if empty := aiConfig(func(string) string { return "" }); empty != (backend.AIConfig{}) {

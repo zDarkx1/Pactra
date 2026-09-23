@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"proofpay/backend/internal/workspace"
+	"pactra/backend/internal/workspace"
 	"testing"
 	"time"
 )
@@ -21,7 +21,7 @@ import (
 // Explicit opt-in only. Never uses TEST_DATABASE_URL and never applies/drops schema.
 // Uses ephemeral no-funds test wallets and removes only those fixture rows.
 func TestHostedWorkspaceSmoke(t *testing.T) {
-	dsn := os.Getenv("PROOFPAY_LIVE_TEST_DATABASE_URL")
+	dsn := os.Getenv("PACTRA_LIVE_TEST_DATABASE_URL")
 	if dsn == "" {
 		t.Skip("explicit hosted smoke opt-in required")
 	}
@@ -42,14 +42,14 @@ func TestHostedWorkspaceSmoke(t *testing.T) {
 	}
 	defer func() {
 		for _, a := range addresses {
-			for _, q := range []string{"DELETE FROM proofpay.tasks WHERE buyer=lower($1)", "DELETE FROM proofpay.sessions WHERE address=lower($1)", "DELETE FROM proofpay.challenges WHERE address=lower($1)", "DELETE FROM proofpay.challenge_limits WHERE address=lower($1)"} {
+			for _, q := range []string{"DELETE FROM pactra.tasks WHERE buyer=lower($1)", "DELETE FROM pactra.sessions WHERE address=lower($1)", "DELETE FROM pactra.challenges WHERE address=lower($1)", "DELETE FROM pactra.challenge_limits WHERE address=lower($1)"} {
 				if _, err := p.Exec(ctx, q, a); err != nil {
 					t.Errorf("fixture cleanup failed")
 				}
 			}
 		}
 		for _, a := range addresses {
-			if _, err := p.Exec(ctx, "DELETE FROM proofpay.accounts WHERE address=lower($1)", a); err != nil {
+			if _, err := p.Exec(ctx, "DELETE FROM pactra.accounts WHERE address=lower($1)", a); err != nil {
 				t.Errorf("account cleanup failed")
 			}
 		}
@@ -91,7 +91,7 @@ func TestHostedWorkspaceSmoke(t *testing.T) {
 	// Check the initial schema and persisted audience, not merely login success.
 	hash := sha256.Sum256([]byte(buyer))
 	var audience string
-	if e = p.QueryRow(ctx, "SELECT audience FROM proofpay.sessions WHERE token_hash=$1", hash[:]).Scan(&audience); e != nil {
+	if e = p.QueryRow(ctx, "SELECT audience FROM pactra.sessions WHERE token_hash=$1", hash[:]).Scan(&audience); e != nil {
 		t.Fatal("session audience read failed")
 	}
 	if audience != `["localhost:3000","http://localhost:3000",31337]` {
