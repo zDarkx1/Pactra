@@ -51,43 +51,64 @@ export default function HomePage() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           id="agreement"
-          className={container + " pt-16 pb-14 lg:pt-24 lg:pb-20"}
+          data-central-hero
+          className={
+            container +
+            " relative flex min-h-[680px] flex-col items-center justify-center py-20 text-center lg:min-h-[760px] lg:py-24"
+          }
         >
-          <div>
-            <h1 className="mb-7 max-w-[620px] text-[clamp(3.1rem,5.4vw,5.1rem)] leading-[1.02] font-semibold tracking-[-.055em]">
-              Agree on what
-              <br />
-              <span className="font-serif font-normal italic text-[#a9583e]">
-                good
-              </span>{" "}
-              looks like.
-            </h1>
-            <p className="mb-8 max-w-[440px] font-serif text-[22px] leading-[1.45]">
-              Less room for interpretation.
-              <br />
-              More room for good work. Bring the scope and its evidence into the
-              same conversation.
-            </p>
-            <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
-              <Link
-                href="/tasks"
-                className="group inline-flex min-h-12 items-center gap-5 rounded-lg bg-ink px-5 text-sm text-canvas no-underline transition-colors hover:bg-[#a9583e]"
-              >
-                Open workspace
-                <ArrowRight
-                  size={18}
-                  className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
-                />
-              </Link>
-              <Link href="#try-a-check" className={link}>
-                See a real check
-                <ArrowRight size={16} />
-              </Link>
-            </div>
-            <p className="mt-6 mb-0 text-xs text-muted">
-              Localization JSON today. Human decisions, always.
-            </p>
+          <div
+            aria-hidden="true"
+            className="mb-8 flex items-center gap-4 text-[#a9583e]"
+          >
+            <span className="h-px w-12 bg-[#d8c5b8]" />
+            <span className="h-3 w-3 rotate-45 border border-current" />
+            <span className="h-px w-12 bg-[#d8c5b8]" />
           </div>
+          <h1 className="mx-auto mb-7 max-w-[1040px] text-[clamp(3.15rem,7.5vw,7rem)] leading-[.99] font-medium tracking-[-.065em]">
+            Good work starts
+            <br />
+            with{" "}
+            <span className="font-serif font-normal italic tracking-[-.045em] text-[#a9583e]">
+              shared clarity.
+            </span>
+          </h1>
+          <p className="mx-auto mb-9 max-w-[560px] font-serif text-[clamp(1.2rem,2vw,1.5rem)] leading-[1.5] text-body">
+            Agree on the scope. Inspect the evidence.
+            <br className="hidden sm:block" /> Keep the final decision human.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
+            <Link
+              href="/tasks"
+              className="group inline-flex min-h-12 items-center gap-6 rounded-full bg-ink px-7 text-sm text-canvas no-underline transition-colors hover:bg-[#a9583e]"
+            >
+              Open workspace
+              <ArrowRight
+                size={18}
+                className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
+              />
+            </Link>
+            <Link href="#try-a-check" className={link}>
+              See a real check
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="mt-14 flex flex-wrap items-center justify-center gap-4 text-[11px] tracking-wide text-muted">
+            <span>01 / Clear terms</span>
+            <span
+              aria-hidden="true"
+              className="h-1 w-1 rounded-full bg-[#c5b9ab]"
+            />
+            <span>02 / Shared evidence</span>
+            <span
+              aria-hidden="true"
+              className="h-1 w-1 rounded-full bg-[#c5b9ab]"
+            />
+            <span>03 / Human decisions</span>
+          </div>
+          <p className="mt-5 mb-0 text-xs text-muted">
+            Localization JSON today. Unfunded agreements only.
+          </p>
         </section>
         <ProductBanner />
         <section id="capabilities" className={container + " py-12 lg:py-20"}>
