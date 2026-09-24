@@ -57,14 +57,6 @@ export default function HomePage() {
             " relative flex min-h-[680px] flex-col items-center justify-center py-20 text-center lg:min-h-[760px] lg:py-24"
           }
         >
-          <div
-            aria-hidden="true"
-            className="mb-8 flex items-center gap-4 text-[#a9583e]"
-          >
-            <span className="h-px w-12 bg-[#d8c5b8]" />
-            <span className="h-3 w-3 rotate-45 border border-current" />
-            <span className="h-px w-12 bg-[#d8c5b8]" />
-          </div>
           <h1 className="mx-auto mb-7 max-w-[1040px] text-[clamp(3.15rem,7.5vw,7rem)] leading-[.99] font-medium tracking-[-.065em]">
             Good work starts
             <br />
