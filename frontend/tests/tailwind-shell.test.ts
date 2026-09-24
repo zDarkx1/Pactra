@@ -43,10 +43,10 @@ test('all public icons render actual accessible Phosphor SSR SVGs', () => {
   }
 });
 
-test('RAC Button preserves pending, disabled, form and variant semantics', () => {
+test('native Button preserves pending, disabled, form and variant semantics', () => {
   const { Button } = loadComponent('ui.tsx');
   const html = renderToStaticMarkup(createElement(Button, { pending: true, pendingLabel: 'Saving agreement…', type: 'submit', name: 'action', value: 'save', variant: 'secondary', className: 'caller-class' }, 'Save'));
-  assert.match(html, /data-rac/);
+  assert.match(html, /<button\b/);
   assert.match(html, /disabled=""/);
   assert.match(html, /aria-busy="true"/);
   assert.match(html, /type="submit"/);
@@ -60,12 +60,12 @@ test('RAC Button preserves pending, disabled, form and variant semantics', () =>
   assert.match(enabled, /type="button"/);
 });
 
-test('RAC ButtonLink renders one real Next anchor and accepts object hrefs', () => {
+test('ButtonLink renders one real Next anchor and accepts object hrefs', () => {
   const { ButtonLink } = loadComponent('ui.tsx');
   const html = renderToStaticMarkup(createElement(ButtonLink, { href: { pathname: '/tasks', query: { view: 'all' } }, variant: 'quiet', target: '_blank', rel: 'noopener', className: 'caller-link' }, 'Tasks'));
   assert.equal((html.match(/<a\b/g) || []).length, 1);
   assert.match(html, /href="\/tasks\?view=all"/);
-  assert.match(html, /data-rac/);
+  assert.match(html, /rel="noopener"/);
   assert.match(html, /target="_blank"/);
   assert.match(html, /caller-link/);
 });
@@ -83,20 +83,20 @@ test('InlineAlert retains roles, titles and all tone variants', () => {
 test('native Button click handlers are called once, cancellable and blocked while pending', () => {
   const { Button, ButtonLink } = loadComponent('ui.tsx');
   let clicks = 0;
-  let ariaClicks = 0;
+
   const event = { detail: 1, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
   const button = Button({ onClick: (received: unknown) => { assert.equal(received, event); clicks++; }, children: 'Save' });
-  button.props.render({ onClick: () => { ariaClicks++; } }).props.onClick(event);
+  button.props.onClick(event);
   assert.equal(clicks, 1);
-  assert.equal(ariaClicks, 1);
-  Button({ pending: true, onClick: () => { clicks++; } }).props.render({}).props.onClick(event);
+  Button({ pending: true, onClick: () => { clicks++; } }).props.onClick(event);
   assert.equal(clicks, 1);
   const cancelled = { ...event, defaultPrevented: false };
-  Button({ onClick: (e: typeof event) => e.preventDefault() }).props.render({ onClick: () => { ariaClicks++; } }).props.onClick(cancelled);
-  assert.equal(ariaClicks, 1);
+  Button({ onClick: (e: typeof event) => e.preventDefault() }).props.onClick(cancelled);
+  assert.equal(cancelled.defaultPrevented, true);
   const link = ButtonLink({ href: '/tasks', onClick: (e: typeof event) => e.preventDefault() });
-  link.props.render({ href: '/tasks', onClick: () => { ariaClicks++; } }).props.onClick({ ...event, defaultPrevented: false });
-  assert.equal(ariaClicks, 1);
+  const linkEvent = { ...event, defaultPrevented: false };
+  link.props.onClick(linkEvent);
+  assert.equal(linkEvent.defaultPrevented, true);
 });
 
 test('every shell/wallet utility class compiles with the installed Tailwind 4 engine', async () => {
@@ -110,9 +110,9 @@ test('every shell/wallet utility class compiles with the installed Tailwind 4 en
   assert.deepEqual(candidates.filter((_, i) => css[i] === null), []);
 });
 
-test('mobile navigation delegates modality to RAC and preserves motion/focus contracts', () => {
+test('mobile navigation delegates modality to Radix and preserves motion/focus contracts', () => {
   const source = readFileSync(resolve(root, 'app-shell.tsx'), 'utf8');
-  for (const component of ['DialogTrigger', 'ModalOverlay', 'Modal', 'Dialog']) assert.match(source, new RegExp(`<${component}\\b`));
+  for (const component of ['Root', 'Trigger', 'Portal', 'Overlay', 'Content', 'Title', 'Description']) assert.ok(source.includes(`<Dialog.${component}`));
   assert.doesNotMatch(source, /showModal|HTMLDialogElement|documentElement\.style\.overflow/);
   for (const contract of ['pactra:focus-main', 'main-content', 'min-width: 768px', 'prefers-reduced-motion: reduce', 'visibilitychange', 'data-sidebar-motion', 'pactra:sidebar']) assert.ok(source.includes(contract));
 });

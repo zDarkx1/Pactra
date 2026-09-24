@@ -1,0 +1,3 @@
+import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';
+const source=readFileSync(new URL('../components/tasks/delivery-review.tsx',import.meta.url),'utf8');
+test('delivery confirmation uses Radix without dropping explicit consent or raw payload identity',()=>{assert.doesNotMatch(source,/react-aria-components/);assert.match(source,/<Dialog\.Content/);assert.match(source,/<Dialog\.Title/);assert.match(source,/<Checkbox\.Root/);assert.match(source,/disabled=\{!acknowledged\}/);assert.match(source,/onConfirm\(acknowledged\)/);assert.match(source,/buildDeliveryIntent\(h, confirmation, notes, raw, acknowledged/)});

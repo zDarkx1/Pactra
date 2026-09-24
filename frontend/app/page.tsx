@@ -6,6 +6,7 @@ import { ProductBanner } from "../components/product-banner";
 import { LazyEvidence } from "../components/lazy-evidence";
 import { HeadingEntrance } from "../components/heading-entrance";
 import { LandingScroll } from "../components/landing-scroll";
+import { ScopeStory } from "../components/scope-story";
 const container = "mx-auto w-full max-w-[1360px] px-6 sm:px-10 lg:px-16";
 const link =
   "group inline-flex min-h-11 items-center gap-3 text-sm font-medium text-ink underline underline-offset-4 decoration-[var(--hairline)] hover:decoration-ink";
@@ -13,29 +14,6 @@ export const metadata: Metadata = {
   title: "Agree on what good looks like.",
   description: "Clear scope, inspectable evidence, human decisions.",
 };
-const steps = [
-  {
-    id: "01",
-    title: "Define the scope.",
-    text: "Source files, deliverables, review terms, and one invited worker. Put the expectations in writing before work begins.",
-    href: "/tasks/new",
-    label: "Create an agreement",
-  },
-  {
-    id: "02",
-    title: "Inspect the evidence.",
-    text: "Check JSON keys, placeholders, required terms, and empty values. Find the exact difference, not just a score.",
-    href: "/checker",
-    label: "Open the checker",
-  },
-  {
-    id: "03",
-    title: "Accept the terms.",
-    text: "The invited worker reviews and accepts the agreed scope. This release stops at an unfunded agreement—not a payment.",
-    href: "/tasks",
-    label: "Visit the workspace",
-  },
-];
 export default function HomePage() {
   return (
     <div className="bg-canvas text-ink">
@@ -85,16 +63,16 @@ export default function HomePage() {
               <ArrowRight size={16} />
             </Link>
           </div>
-          <div className="mt-14 flex flex-wrap items-center justify-center gap-4 text-[11px] tracking-wide text-muted">
+          <div className="mt-10 flex flex-col items-center justify-center gap-2 text-xs tracking-wide text-muted sm:mt-14 sm:flex-row sm:gap-4">
             <span>01 / Clear terms</span>
             <span
               aria-hidden="true"
-              className="h-1 w-1 rounded-full bg-[#c5b9ab]"
+              className="hidden h-1 w-1 rounded-full bg-[#c5b9ab] sm:block"
             />
             <span>02 / Shared evidence</span>
             <span
               aria-hidden="true"
-              className="h-1 w-1 rounded-full bg-[#c5b9ab]"
+              className="hidden h-1 w-1 rounded-full bg-[#c5b9ab] sm:block"
             />
             <span>03 / Human decisions</span>
           </div>
@@ -103,51 +81,7 @@ export default function HomePage() {
           </p>
         </section>
         <ProductBanner />
-        <section id="capabilities" className={container + " py-12 lg:py-20"}>
-          <div className="grid gap-8 border-t border-[var(--hairline)] pt-8 lg:grid-cols-[1fr_2fr] lg:gap-20">
-            <div>
-              <p className="mb-4 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
-                The working agreement
-              </p>
-              <h2 className="max-w-xs font-serif text-4xl leading-[1.12] font-normal">
-                One shared record.
-                <br />
-                No moving goalposts.
-              </h2>
-              <p className="mt-6 max-w-xs text-sm leading-relaxed text-muted">
-                A clear scope is a starting point—not a guarantee. Evidence
-                makes the next conversation more specific.
-              </p>
-            </div>
-            <ol className="m-0 list-none p-0">
-              {steps.map((s) => (
-                <li
-                  key={s.id}
-                  className="group grid grid-cols-[32px_1fr] gap-4 border-b border-[var(--hairline)] py-7 first:pt-0 sm:grid-cols-[48px_1fr] sm:gap-6"
-                >
-                  <span className="pt-2 font-mono text-xs text-[#a9583e]">
-                    {s.id}
-                  </span>
-                  <div>
-                    <h3 className="mb-3 text-2xl font-medium tracking-tight">
-                      {s.title}
-                    </h3>
-                    <p className="mb-4 max-w-xl font-serif text-xl leading-[1.45] text-body">
-                      {s.text}
-                    </p>
-                    <Link href={s.href} className={link}>
-                      {s.label}
-                      <ArrowUpRight
-                        size={16}
-                        className="transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none"
-                      />
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+        <ScopeStory />
         <section id="try-a-check" className="my-8 bg-[#eee8dd] py-14 lg:py-20">
           <div
             className={
@@ -195,7 +129,7 @@ export default function HomePage() {
             <h2 className="max-w-2xl font-serif text-[clamp(2.8rem,4.5vw,4rem)] leading-[1.08] font-normal tracking-tight">
               Tools can surface evidence.
               <br />
-              <span className="text-[#a9583e]">People make the call.</span>
+              <span className="relative inline-block text-[#a9583e]">People make the call.<span data-decision-line aria-hidden="true" className="absolute -bottom-2 left-0 h-[3px] w-full origin-left bg-[#a9583e]" /></span>
             </h2>
           </div>
           <div className="self-center">
@@ -211,8 +145,7 @@ export default function HomePage() {
               <strong className="block text-ink">
                 Current release — unfunded agreements.
               </strong>
-              Funding, payouts, disputes, and stored submissions are not
-              available.
+              Wallet sign-in and private work review are available. New agreements require configured team arbiters. Funding, payouts and arbiter dispute resolution are not available.
             </aside>
           </div>
         </section>
@@ -231,10 +164,12 @@ export default function HomePage() {
           </div>
           <Link
             href="/journal/introducing-pactra"
+            data-journal-cover
             className="group grid overflow-hidden rounded-xl bg-[#eee8dd] text-ink no-underline transition-colors hover:bg-[#e8e0d2] lg:grid-cols-[.7fr_1.3fr]"
           >
             <div
               aria-hidden="true"
+              data-journal-art
               className="relative flex min-h-56 flex-col justify-between overflow-hidden bg-[#a9583e] p-8 text-canvas sm:p-10"
             >
               <span className="font-mono text-xs tracking-[.15em] uppercase">
@@ -296,7 +231,7 @@ export default function HomePage() {
                 ["Checker", "/checker"],
                 [
                   "Documentation",
-                  "https://github.com/zDarkx1/Pactra/tree/interface/anthropic-landing/docs",
+                  "https://github.com/zDarkx1/Pactra/tree/main/docs",
                 ],
               ].map(([label, href]) => (
                 <Link

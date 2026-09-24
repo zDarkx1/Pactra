@@ -110,4 +110,14 @@ test('request cancellation, consent, pending and native constraint wiring stay i
   assert.match(form, /fieldset disabled=\{blocked \|\| pending \|\| uncertain\}/);
   assert.match(form, /type="datetime-local" step="60"/);
   assert.match(form, /noValidate autoComplete="off"/);
+  assert.match(form, /<WorkspaceConfirmation/);
+  assert.match(form, /if \(!acknowledged\) return/);
+});
+
+test('task utility maps compile with the installed Tailwind engine', async () => {
+  const { __unstable__loadDesignSystem } = await import('tailwindcss');
+  const design = await __unstable__loadDesignSystem(readFileSync(require.resolve('tailwindcss/theme.css'), 'utf8'));
+  const candidates = [...new Set(['components/tasks/task-styles.ts', 'components/tasks/task-list-styles.ts'].flatMap(file => Object.values(load(file).default).flatMap(value => String(value).split(/\s+/))))].filter(value => value && !value.startsWith('group/'));
+  const css = design.candidatesToCss(candidates);
+  assert.deepEqual(candidates.filter((_, index) => css[index] === null), []);
 });
