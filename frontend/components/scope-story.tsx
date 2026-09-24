@@ -24,7 +24,7 @@ export function ScopeStory(){return <section id="capabilities" data-scope-story 
       <div data-scope-seal className="absolute -right-3 -bottom-5 flex size-24 rotate-[-12deg] flex-col items-center justify-center rounded-full border-2 border-[#a9583e] bg-[#f8eddf] text-[#8e432d]"><Check size={24}/><span className="font-mono text-[9px] tracking-wider">SCOPE FIRST</span></div>
      </div>
     </div>
-    <p className="mt-5 mb-0 text-center font-mono text-[10px] tracking-wider uppercase text-muted">Illustrative record · No funds move</p>
+
    </div>
    <ol className="m-0 list-none p-0">{steps.map(s=><li key={s.number} data-scope-step className="flex min-h-[250px] flex-col justify-center border-t border-[#cfc6b7] py-10 lg:min-h-[340px]"><div className="mb-6 flex items-center gap-4"><span className="font-mono text-xs text-[#a9583e]">/{s.number}</span><span className="font-mono text-[10px] tracking-[.14em] uppercase text-muted">{s.mark}</span></div><h3 className="mb-4 font-serif text-4xl leading-[1.08] font-normal lg:text-5xl">{s.title}</h3><p className="max-w-lg text-base leading-relaxed text-body">{s.text}</p><p className="mt-3 mb-0 max-w-md border-l-2 border-[#a9583e]/40 pl-4 font-serif text-xl italic text-muted [text-wrap:pretty]">{s.example}</p></li>)}</ol>
   </div>

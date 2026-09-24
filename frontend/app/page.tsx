@@ -63,22 +63,8 @@ export default function HomePage() {
               <ArrowRight size={16} />
             </Link>
           </div>
-          <div className="mt-10 flex flex-col items-center justify-center gap-2 text-xs tracking-wide text-muted sm:mt-14 sm:flex-row sm:gap-4">
-            <span>01 / Clear terms</span>
-            <span
-              aria-hidden="true"
-              className="hidden h-1 w-1 rounded-full bg-[#c5b9ab] sm:block"
-            />
-            <span>02 / Shared evidence</span>
-            <span
-              aria-hidden="true"
-              className="hidden h-1 w-1 rounded-full bg-[#c5b9ab] sm:block"
-            />
-            <span>03 / Human decisions</span>
-          </div>
-          <p className="mt-5 mb-0 text-xs text-muted">
-            Localization JSON today. Unfunded agreements only.
-          </p>
+
+
         </section>
         <ProductBanner />
         <ScopeStory />
@@ -90,9 +76,7 @@ export default function HomePage() {
             }
           >
             <div>
-              <p className="mb-5 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
-                Small detail. Real difference.
-              </p>
+
               <h2 className="mb-6 max-w-sm font-serif text-[clamp(2.6rem,4vw,3.7rem)] leading-[1.05] font-normal tracking-tight">
                 Don’t take
                 <br />
@@ -123,9 +107,7 @@ export default function HomePage() {
           }
         >
           <div>
-            <p className="mb-6 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
-              A deliberate boundary
-            </p>
+
             <h2 className="max-w-2xl font-serif text-[clamp(2.8rem,4.5vw,4rem)] leading-[1.08] font-normal tracking-tight">
               Tools can surface evidence.
               <br />
@@ -158,9 +140,7 @@ export default function HomePage() {
             <h2 id="journal-title" className="m-0 text-xl font-medium">
               From the Pactra journal
             </h2>
-            <span className="font-mono text-[11px] tracking-wider uppercase text-muted">
-              Ideas behind the product
-            </span>
+
           </div>
           <Link
             href="/journal/introducing-pactra"
@@ -172,9 +152,7 @@ export default function HomePage() {
               data-journal-art
               className="relative flex min-h-56 flex-col justify-between overflow-hidden bg-[#a9583e] p-8 text-canvas sm:p-10"
             >
-              <span className="font-mono text-xs tracking-[.15em] uppercase">
-                Pactra / Project notes
-              </span>
+
               <span className="mt-12 font-serif text-6xl leading-[.95] tracking-tight sm:text-7xl">
                 On the
                 <br />

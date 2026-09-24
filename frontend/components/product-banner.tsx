@@ -20,9 +20,7 @@ export function ProductBanner() {
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-[7vw] hidden max-w-[34vw] -translate-y-1/2 lg:block"
         >
-          <p className="mb-6 font-mono text-xs uppercase tracking-widest text-muted">
-            From your side. From their side.
-          </p>
+
           <p className="font-serif text-[clamp(3rem,5vw,5.5rem)] leading-[1.02] tracking-tight">
             Meet on
             <br />
