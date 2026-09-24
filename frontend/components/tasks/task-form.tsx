@@ -10,7 +10,7 @@ import type { Task } from '../../lib/workspace-types';
 import { deadlineToUtc, isTaskAddress, newDeliverable, newTaskDraft, validateTaskDraft, type DeliverableDraft, type TaskDraft, type TaskFormErrors, type TaskValidation } from '../../lib/task-form';
 import { ManifestDetails } from './manifest-details';
 import { TaskButton, SessionExpired, TaskSession, taskErrorMessage, taskErrorStatus } from './task-shared';
-import styles from './tasks.module.css';
+import styles from './task-styles';
 
 function FormField({ name, label, help, error, children }: { name: string; label: string; help?: string; error?: string; children: ReactNode }) {
   return <div className={styles.field}><label htmlFor={name}>{label}</label>{children}{help && <p id={name + '-help'} className={styles.hint}>{help}</p>}{error && <p id={name + '-error'} className={styles.error}>{error}</p>}</div>;

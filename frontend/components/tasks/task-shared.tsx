@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Icon } from '../ui';
 import { WorkspaceError, workspaceRequest } from '../../lib/workspace-client';
 import type { Task } from '../../lib/workspace-types';
-import styles from './tasks.module.css';
+import styles from './task-styles';
 
 export function TaskButton({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return <button {...props}><span className={styles.buttonContent}>{children}</span></button>;

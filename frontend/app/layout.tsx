@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import '@fontsource/ibm-plex-sans/400.css';
 import '@fontsource/ibm-plex-sans/500.css';
 import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-sans/700.css';
 import '@fontsource/newsreader/400.css';
 import '@fontsource/newsreader/500.css';
 import '@fontsource/jetbrains-mono/400.css';
@@ -20,5 +21,5 @@ export const metadata: Metadata = {
 };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const config = getPublicWorkspaceConfig();
-  return <html lang="en" style={{ '--font-ui': '"IBM Plex Sans", system-ui, sans-serif', '--font-display': 'Newsreader, Georgia, serif', '--font-mono': '"JetBrains Mono", ui-monospace, monospace' } as React.CSSProperties}><body><ScrollBehavior /><NavigationFocus /><WorkspaceProvider config={config}>{children}</WorkspaceProvider></body></html>;
+  return <html lang="en"><body><ScrollBehavior /><NavigationFocus /><WorkspaceProvider config={config}>{children}</WorkspaceProvider></body></html>;
 }

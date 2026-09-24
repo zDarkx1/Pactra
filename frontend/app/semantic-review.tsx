@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { createRequestGuard, isReviewResponse, reviewInputError } from './checker/model';
 import type { ReviewResponse } from './checker/model';
-import styles from './checker/checker.module.css';
+import styles from './checker/checker-styles';
 
 export default function SemanticReview({ body }: { body: string | null }) {
   if (process.env.NODE_ENV === 'production') return <section className={styles.aiPanel} aria-labelledby="ai-review-title"><div className={styles.sectionHeading}><div><h2 id="ai-review-title">AI meaning review</h2><p>Optional, advisory, and separate from deterministic checks.</p></div><span className={styles.tag}>Disabled</span></div><p className={styles.aiBoundary}>AI review is disabled in production. It stays local-only until authenticated access and durable per-user spend limits are in place. Deterministic checks remain available.</p></section>;

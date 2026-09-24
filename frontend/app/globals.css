@@ -1,4 +1,18 @@
+@import "tailwindcss";
+@theme inline {
+ --color-canvas: var(--canvas);
+ --color-ink: var(--ink);
+ --color-muted: var(--muted);
+ --color-card: var(--surface-card);
+ --color-coral: var(--primary);
+ --font-sans: var(--font-ui);
+ --font-serif: var(--font-display);
+ --font-mono: "JetBrains Mono", monospace;
+}
 :root {
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: Newsreader, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --primary: #cc785c;
   --primary-hover: #d58a70;
   --primary-active: #c16d52;
@@ -59,6 +73,8 @@
   --accent: var(--primary);
   --teal: var(--link);
 }
+
+@layer base {
 
 * { box-sizing: border-box; }
 html { color-scheme: light; scroll-padding-top: 6rem; }
@@ -146,4 +162,6 @@ img, video { max-width: 100%; height: auto; }
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
 }

@@ -6,7 +6,7 @@ import { createRequestGuard, prepareCheck } from '../app/checker/model';
 import { isCheckResponse } from '../lib/check-response';
 import type { CheckInput, ViewState } from '../lib/types';
 import { Icon } from './ui';
-import styles from '../app/landing.module.css';
+import styles from './landing-evidence-styles';
 
 export default function LandingEvidence() {
   const [restored, setRestored] = useState(false);

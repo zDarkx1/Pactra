@@ -9,7 +9,7 @@ import { workspaceRequest } from '../../lib/workspace-client';
 import type { Task } from '../../lib/workspace-types';
 import { ManifestDetails } from './manifest-details';
 import { TaskButton, CopyValue, SessionExpired, TaskLoading, TaskSession, TaskStatusBadge, TaskTime, taskDisplayStatus, taskErrorMessage, taskErrorStatus, useTaskClock, useTaskResource } from './task-shared';
-import styles from './tasks.module.css';
+import styles from './task-styles';
 
 export default function TaskDetailView({ id }: { id: string }) {
   const validId = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id);

@@ -3,7 +3,7 @@
 import type { Deliverable, Manifest } from '../../lib/workspace-types';
 import type { TaskCreateInput } from '../../lib/task-form';
 import { CopyValue, TaskTime } from './task-shared';
-import styles from './tasks.module.css';
+import styles from './task-styles';
 
 export function DeliverableDetails({ deliverables }: { deliverables: Deliverable[] }) {
   return <div className={styles.deliverables}>{deliverables.map((item, index) => <section className={styles.deliverable} key={item.id}>

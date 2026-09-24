@@ -7,7 +7,7 @@ import { invalidateResult } from '../../lib/check-input';
 import { isCheckResponse } from '../../lib/check-response';
 import type { CheckInput, CheckResponse, ViewState } from '../../lib/types';
 import { buildEvidence, createRequestGuard, prepareCheck } from './model';
-import styles from './checker.module.css';
+import styles from './checker-styles';
 
 const example: CheckInput = {
   source: '{\n  "greeting": "Hello {name}",\n  "brand": "Pactra"\n}',

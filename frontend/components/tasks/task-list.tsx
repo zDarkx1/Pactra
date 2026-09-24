@@ -7,8 +7,8 @@ import { Icon } from '../ui';
 import type { Task } from '../../lib/workspace-types';
 import { taskMatchesSearch } from '../../lib/task-list';
 import { TaskButton, SessionExpired, TaskLoading, TaskSession, TaskStatusBadge, TaskTime, taskDisplayStatus, taskErrorMessage, taskErrorStatus, useTaskClock, useTaskResource } from './task-shared';
-import shared from './tasks.module.css';
-import styles from './task-list.module.css';
+import shared from './task-styles';
+import styles from './task-list-styles';
 
 export default function TaskListView() {
   return <TaskSession><TaskList /></TaskSession>;
