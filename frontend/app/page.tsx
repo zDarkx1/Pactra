@@ -206,6 +206,59 @@ export default function HomePage() {
             </aside>
           </div>
         </section>
+        <section
+          id="journal"
+          className={container + " pb-20 lg:pb-28"}
+          aria-labelledby="journal-title"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-[var(--hairline)] pt-7 pb-8">
+            <h2 id="journal-title" className="m-0 text-xl font-medium">
+              From the Pactra journal
+            </h2>
+            <span className="font-mono text-[11px] tracking-wider uppercase text-muted">
+              Ideas behind the product
+            </span>
+          </div>
+          <Link
+            href="/journal/introducing-pactra"
+            className="group grid overflow-hidden rounded-xl bg-[#eee8dd] text-ink no-underline transition-colors hover:bg-[#e8e0d2] lg:grid-cols-[.7fr_1.3fr]"
+          >
+            <div
+              aria-hidden="true"
+              className="relative flex min-h-56 flex-col justify-between overflow-hidden bg-[#a9583e] p-8 text-canvas sm:p-10"
+            >
+              <span className="font-mono text-xs tracking-[.15em] uppercase">
+                Pactra / Project notes
+              </span>
+              <span className="mt-12 font-serif text-6xl leading-[.95] tracking-tight sm:text-7xl">
+                On the
+                <br />
+                <span className="italic">same page.</span>
+              </span>
+              <span className="mt-8 h-px w-full bg-white/40" />
+            </div>
+            <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14">
+              <p className="mb-5 font-mono text-xs tracking-wider uppercase text-muted">
+                Introducing Pactra
+              </p>
+              <h3 className="mb-5 max-w-xl font-serif text-[clamp(2rem,3.5vw,3.2rem)] leading-[1.08] font-normal tracking-tight group-hover:underline decoration-1 underline-offset-4">
+                A shared definition of done.
+              </h3>
+              <p className="mb-8 max-w-xl font-serif text-xl leading-relaxed">
+                Why clear scope comes first. What the checker actually proves.
+                Where AI belongs—and why acceptance stays human. An in-depth
+                look at the project, drawn from its documentation.
+              </p>
+              <span className="inline-flex min-h-11 items-center gap-4 text-sm font-medium">
+                Read the project story
+                <ArrowUpRight
+                  size={18}
+                  className="transition-transform group-hover:-translate-y-1 motion-reduce:transform-none"
+                />
+              </span>
+            </div>
+          </Link>
+        </section>
       </main>
       <footer className="bg-ink py-10 text-canvas">
         <div className={container}>

@@ -32,6 +32,7 @@ const groups = [
   {
     label: "Learn",
     items: [
+      ["The Pactra story", "/journal/introducing-pactra"],
       ["How it works", "/#capabilities"],
       ["Review the evidence", "/checker"],
       [
