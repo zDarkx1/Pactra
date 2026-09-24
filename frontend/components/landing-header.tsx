@@ -84,7 +84,7 @@ function Dropdown({ group, navigate, dismiss }: { group: (typeof groups)[number]
         }}
         className="absolute inset-x-0 top-full z-30 max-h-[calc(100dvh-68px)] overflow-y-auto overscroll-contain border-y border-[var(--hairline)] bg-canvas shadow-[0_22px_36px_#14141312]"
       >
-        <div className="mx-auto grid max-w-[1360px] grid-cols-[.9fr_1.5fr_.85fr] gap-8 px-10 py-10 xl:gap-10 xl:px-16">
+        <div className="motion-safe:animate-nav-panel-in mx-auto grid max-w-[1360px] grid-cols-[.9fr_1.5fr_.85fr] gap-8 px-10 py-10 xl:gap-10 xl:px-16">
           <div>
             <p className="mb-4 font-mono text-xs uppercase tracking-wider text-muted">{group.label}</p>
             <p className="mb-4 font-serif text-3xl leading-tight">{summaries[group.label as keyof typeof summaries][0]}</p>
@@ -197,7 +197,7 @@ export function LandingHeader() {
         <Dialog.Root open={open} onOpenChange={(next) => { if (next) destination.current = null; setOpen(next); }}>
           <Dialog.Trigger ref={trigger} onPointerDown={(event) => { if (event.button === 0) { event.preventDefault(); event.currentTarget.focus({ preventScroll: true }); } }} aria-label="Open navigation" className="flex size-11 shrink-0 items-center justify-center border-0 bg-transparent p-0 lg:hidden"><List aria-hidden size={26} /></Dialog.Trigger>
           <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 z-50 bg-ink/30" />
+            <Dialog.Overlay className="motion-safe:data-[state=open]:animate-nav-fade-in motion-safe:data-[state=closed]:animate-nav-fade-out fixed inset-0 z-50 bg-ink/30" />
             <Dialog.Content
               aria-modal="true"
               onOpenAutoFocus={(event) => { event.preventDefault(); close.current?.focus({ preventScroll: true }); }}
@@ -208,7 +208,7 @@ export function LandingHeader() {
                 if (href && href !== "navigation") visitAnchor(href);
                 else if (!href) (matchMedia("(min-width: 1024px)").matches ? home.current : trigger.current)?.focus({ preventScroll: true });
               }}
-              className="fixed inset-y-0 right-0 z-50 flex h-dvh w-[calc(100%-1rem)] max-w-md flex-col overflow-y-auto overscroll-contain bg-canvas pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] text-ink shadow-[-12px_0_40px_#14141318] outline-none"
+              className="motion-safe:data-[state=open]:animate-nav-drawer-in motion-safe:data-[state=closed]:animate-nav-drawer-out fixed inset-y-0 right-0 z-50 flex h-dvh w-[calc(100%-1rem)] max-w-md flex-col overflow-y-auto overscroll-contain bg-canvas pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))] pt-[env(safe-area-inset-top)] text-ink shadow-[-12px_0_40px_#14141318] outline-none"
             >
               <Dialog.Title className="sr-only">Main navigation</Dialog.Title>
               <Dialog.Description className="sr-only">Explore Pactra’s product, principles, and project resources.</Dialog.Description>
@@ -225,9 +225,9 @@ export function LandingHeader() {
                           {group.label}<CaretDown aria-hidden size={16} className="shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180 motion-reduce:transition-none" />
                         </Accordion.Trigger>
                       </Accordion.Header>
-                      <Accordion.Content className="pb-4">
+                      <Accordion.Content data-nav-accordion className="overflow-hidden motion-safe:data-[state=open]:animate-nav-accordion-in motion-safe:data-[state=closed]:animate-nav-accordion-out"><div className="pb-4">
                         {group.items.map(([label, href]) => <Link key={label} href={href} onClick={navigate} className="flex min-h-11 items-center py-2 text-base text-ink no-underline hover:underline underline-offset-4">{label}</Link>)}
-                      </Accordion.Content>
+                      </div></Accordion.Content>
                     </Accordion.Item>
                   ))}
                 </Accordion.Root>

@@ -72,6 +72,7 @@ export async function mobileNavigation(width = 390, reducedMotion = 'reduce') {
       const box = await trigger.boundingBox();
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       await dialog.waitFor();
+      await dialog.evaluate(async el => { await Promise.all(el.getAnimations().map(animation => animation.finished.catch(() => {}))); });
     };
     const triggerBox = await trigger.boundingBox();
     const logoBox = await page.getByRole('link', { name: 'Pactra home', exact: true }).boundingBox();
