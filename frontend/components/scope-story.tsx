@@ -9,7 +9,7 @@ const steps = [
 export function ScopeStory(){return <section id="capabilities" data-scope-story className="relative overflow-clip bg-[#eee8dd] px-6 py-16 sm:px-10 lg:px-16 lg:py-24" aria-labelledby="scope-story-title">
  <div className="mx-auto max-w-[1248px]">
   <div className="mb-12 flex flex-wrap items-end justify-between gap-8 border-t border-[#cfc6b7] pt-8">
-   <div><p className="mb-4 font-mono text-[11px] tracking-[.14em] uppercase text-muted">The working agreement / 01—03</p><h2 id="scope-story-title" className="m-0 max-w-2xl font-serif text-[clamp(2.8rem,6vw,5.8rem)] leading-[.98] font-normal tracking-[-.045em]">Not more paperwork.<br/><em className="text-[#a9583e]">Less guesswork.</em></h2></div>
+   <div><h2 id="scope-story-title" className="m-0 max-w-2xl font-serif text-[clamp(2.8rem,6vw,5.8rem)] leading-[.98] font-normal tracking-[-.045em]">Not more paperwork.<br/><em className="text-[#a9583e]">Less guesswork.</em></h2></div>
    <p className="m-0 max-w-xs text-sm text-body">Scroll through a shared record. The illustration is a process, not a live customer agreement.</p>
   </div>
   <div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:gap-20">

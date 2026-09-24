@@ -52,9 +52,6 @@ export function ProductBanner() {
             data-expand-copy
             className="relative w-full max-w-[960px] px-8 text-center"
           >
-            <p className="mb-7 font-mono text-[11px] tracking-[.15em] uppercase text-white/75">
-              Scope / evidence / people
-            </p>
             <h2
               id="product-title"
               className="mb-7 font-serif text-[clamp(3.2rem,7.6vw,7.4rem)] leading-[.98] font-normal tracking-[-.045em] text-canvas"
