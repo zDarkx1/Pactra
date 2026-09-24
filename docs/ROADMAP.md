@@ -1,29 +1,23 @@
-# Roadmap and ownership
+# Current roadmap — non-contract workspace
 
-## Latest backend checkpoint
-Implemented: optional real Azure semantic review, PostgreSQL persistence for private invitations/manifests, EOA wallet sessions, immutable worker acceptance and cancellation before acceptance. Hosted Supabase smoke verified. See PERSISTENT_BACKEND.md and workspace API README.
+The `feature/non-contract-workspace` branch extends the UI branch, not `main`.
 
-Next: frontend wallet/task integration; real team arbiter configuration; idempotent creation and pagination; versioned submissions/evidence storage; authenticated per-user AI budgets; cleanup/backup/restore; remaining settlement policy and reviewed contracts. No funding/payment route exists. The phases below describe the broader plan, not all remaining work from zero.
+## Implemented in source; integrated verification required before release
+- Private wallet-authenticated agreement list/create/accept/cancel with immutable `accepted_unfunded` status.
+- Buyer-scoped creation idempotency and participant-only cursor pagination.
+- Voluntary unfunded JSON work review: versioned artifacts, actual checker metadata, revision requests, human acceptance and a dispute evidence flag. No delivery obligation before funding, monetary claim, financial timer, automated arbitration or payout.
+- Authenticated AI advisory with explicit disabled-by-default daily wallet/global request caps. Failed attempts consume quota; request limits are not currency-budget guarantees.
+- Bounded expired-auth cleanup and encrypted isolated backup/restore tooling.
+- Editorial public landing, journal citations, accessible mega menu/sidebar, lazy loading and reduced-motion support.
 
-## P0 — runnable team foundation (this handoff)
-Go checker, Next workbench, tests, env, docs and CI. Verify locally and inspect VERIFICATION.md.
+See [delivery API](DELIVERY_API.md), [task reliability](TASK_RELIABILITY.md), [AI budgets](AI_BUDGETS.md), [operations proof](OPERATIONS_VERIFICATION.md), and [submission checklist](../SUBMISSION_READINESS.md).
 
-## P1 — acceptance evidence
-Backend: canonical manifest draft/version specification and test vectors.
-Frontend: per-criterion source/output evidence and editable draft with missing fields.
-Both: validate narrow localization use case with actual users; freeze checker grammar/version.
-Done: unchanged snapshots reproduce a report; changed input cannot reuse old review identity.
+## Remaining release gates
+- Exact current migration/runtime grants, encrypted pre-migration backup, fresh integrated test and review verdict.
+- Public wallet sign-in requires validated network settings. Public agreement creation also requires two real consenting team arbiter addresses; test fixture addresses must never replace them.
+- Real browser-extension/device wallet QA is separate from a browser-injected test wallet using real cryptographic signatures.
+- Public AI availability remains a separately explicit configuration with provider limits. No open unauthenticated provider endpoint.
+- Hosted backup scheduling/restore and credential rotation must preserve team access and use the current schema; a local drill alone is not hosted disaster recovery.
+- Contract-backed funding/settlement, arbitration policy/resolution and actual competition submission remain separate. X posting, repository visibility changes and launch claims need owner sign-off.
 
-## P2 — identity and persistence
-Owner chooses storage/auth design. Implement wallet session security, authorized snapshots and versioned submissions. Document migrations and backups. Do not confuse database task state with blockchain state.
-
-## P3 — real AI advisory
-Choose provider and budget; implement Go adapter, strict schema/evidence checks, timeout and unavailable fallback. Evaluate hallucination/prompt-injection cases. No model-authorized payments.
-
-## P4 — settlement policy and contracts
-Resolve every blocking decision, then implement/tests/review. Integrate ABI and event readback only after testnet behavior is proven. No funds before gate.
-
-## P5 — public end-to-end and submission
-Real testnet then explicitly approved mainnet deployment, funded minimal tests, stable public frontend/backend, docs, X requirements, branding and deadline confirmation. All seven submission items tracked in HACKATHON.md.
-
-Team size/individual owners are not yet assigned; assign a person to each workstream during kickoff. Do not assume there are three engineers available. A roadmap is not a commitment that all items fit the remaining contest time.
+A built feature, verified local flow, pushed branch and public deployment are separate milestones. Final evidence belongs in NON_CONTRACT_VERIFICATION.md when available.

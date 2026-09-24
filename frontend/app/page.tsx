@@ -1,106 +1,316 @@
-'use client';
-
-import SemanticReview from './semantic-review';
-import { useEffect, useRef, useState } from 'react';
-import type { FormEvent } from 'react';
-import { buildRawRequest, invalidateResult } from '../lib/check-input';
-import { isCheckResponse } from '../lib/check-response';
-import type { CheckInput, ViewState } from '../lib/types';
-
-const defaults: CheckInput = { source: '{"greeting":"Hello {name}","brand":"Pactra"}', submission: '{"greeting":"Halo","brand":"Pactra"}', preservePlaceholders: true, requiredTerms: 'Pactra' };
-const labels: Record<string, string> = { key_parity: 'Key parity', nonempty: 'Non-empty translation', placeholders: 'Placeholder preservation', required_term: 'Required term' };
-
-export default function Workbench() {
-  const [input, setInput] = useState<CheckInput>({ ...defaults });
-  const [view, setView] = useState<ViewState>(invalidateResult);
-  const controller = useRef<AbortController | null>(null);
-  const generation = useRef(0);
-  useEffect(() => () => controller.current?.abort(), []);
-
-  function edit(next: CheckInput) {
-    generation.current += 1;
-    controller.current?.abort();
-    setInput(next);
-    setView(invalidateResult());
-  }
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    controller.current?.abort();
-    const current = ++generation.current;
-    let body: string;
-    try {
-      body = buildRawRequest(input);
-      if (new TextEncoder().encode(body).length > 128 * 1024) throw new Error('Request exceeds the 128 KiB limit.');
-    } catch (cause) {
-      setView({ result: null, error: cause instanceof Error ? cause.message : 'Check the JSON inputs.', loading: false });
-      return;
-    }
-    const pending = new AbortController();
-    controller.current = pending;
-    setView({ result: null, error: null, loading: true });
-    try {
-      const response = await fetch('/api/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: pending.signal, credentials: 'omit' });
-      const result: unknown = await response.json();
-      if (!response.ok) {
-        const messages: Record<number, string> = { 400: 'The checker rejected the input. Check duplicate keys, field limits, and rules.', 413: 'Request exceeds the 128 KiB limit.', 504: 'The checker timed out. Please try again.' };
-        throw new Error(messages[response.status] || 'The local checker is unavailable. Confirm the Go service is running and try again.');
-      }
-      if (!isCheckResponse(result)) throw new Error('The checker returned an invalid response. Please try again.');
-      if (generation.current === current) setView({ result, error: null, loading: false });
-    } catch (cause) {
-      if (generation.current === current && !pending.signal.aborted) setView({ result: null, error: cause instanceof Error ? cause.message : 'Unable to reach the checker.', loading: false });
-    }
-  }
-  let reviewBody: string | null = null;
-  try { reviewBody = buildRawRequest(input); } catch { /* Invalid inputs cannot start AI review. */ }
-  return <div className="shell">
-    <a className="skip" href="#workbench">Skip to workbench</a>
-    <aside className="sidebar" aria-label="Workspace overview">
-      <a href="/" className="brand"><span className="brand-mark" aria-hidden="true">P<span>✓</span></span>Pactra</a>
-      <div className="workspace-label">LOCAL WORKSPACE <span className="dot" /></div>
-      <div className="active-nav"><span aria-hidden="true">▦</span> Localization checker <span className="nav-index">01</span></div>
-      <div className="roadmap"><p className="eyebrow">PLANNED MILESTONES</p>
-        {['Wallet connection', 'Escrow & settlement', 'Submission storage'].map((name, index) => <div className="milestone" key={name}><span className="milestone-number">0{index + 2}</span><div>{name}<small>NOT IMPLEMENTED</small></div></div>)}
-      </div>
-      <div className="sidebar-note"><span className="small-mark" aria-hidden="true">◇</span><strong>Evidence before action.</strong><p>Deterministic checks are a starting point. Human review stays essential.</p><span className="version">STARTER / LOCALIZATION V1</span></div>
-    </aside>
-    <div className="main-column">
-      <header className="topbar"><span>Workspace <span className="slash">/</span> <strong>Localization</strong></span><span className="local-badge"><span className="dot" /> Local starter</span></header>
-      <main id="workbench">
-        <div className="scope-banner"><span aria-hidden="true">ⓘ</span> Local starter • optional Azure AI review • no wallet, escrow or storage connected</div>
-        <div className="page-heading"><div><p className="eyebrow">SUBMISSION WORKBENCH</p><h1>Make every string count.</h1><p className="subtitle">Compare a translation against its source. See exactly what needs attention.</p></div><span className="engine-tag">DETERMINISTIC<br /><strong>localization-v1</strong></span></div>
-        <div className="work-grid">
-          <section className="editor-panel" aria-labelledby="input-title">
-            <div className="panel-heading"><div><span className="step">01</span><h2 id="input-title">Prepare your submission</h2></div><span className="muted-caption">JSON → JSON</span></div>
-            <form onSubmit={submit} aria-busy={view.loading}>
-              <div className="document-grid">
-                <div className="field"><div className="field-heading"><label htmlFor="source">Source</label><span>REFERENCE</span></div><textarea id="source" spellCheck={false} autoCapitalize="off" autoCorrect="off" value={input.source} onChange={event => edit({ ...input, source: event.target.value })} aria-describedby="json-help" /></div>
-                <div className="field"><div className="field-heading"><label htmlFor="submission">Submission</label><span>TRANSLATION</span></div><textarea id="submission" spellCheck={false} autoCapitalize="off" autoCorrect="off" value={input.submission} onChange={event => edit({ ...input, submission: event.target.value })} aria-describedby="json-help sample-help" /></div>
-              </div>
-              <p className="field-help" id="json-help">Use JSON objects with string values only. Duplicate keys are checked by the server.</p>
-              <div className="rules"><div className="rules-heading"><h3>Check rules</h3><span>APPLIED TO THIS RUN</span></div>
-                <label className="checkbox-row"><input type="checkbox" checked={input.preservePlaceholders} onChange={event => edit({ ...input, preservePlaceholders: event.target.checked })} /><span><strong>Preserve placeholders</strong><small>Keep tokens such as {'{name}'} intact in each translation.</small></span></label>
-                <label className="terms-label" htmlFor="terms">Required terms <span>Optional · comma or newline separated</span></label>
-                <textarea className="terms" id="terms" rows={2} value={input.requiredTerms} onChange={event => edit({ ...input, requiredTerms: event.target.value })} aria-describedby="terms-help" />
-                <p className="field-help" id="terms-help">Case-sensitive terms must remain in the corresponding source key’s translation.</p>
-              </div>
-              <div className="sample-note" id="sample-help"><span aria-hidden="true">↳</span> The starter sample is missing {'{name}'}. Run it to inspect the failure.</div>
-              <div className="actions"><button className="primary" type="submit" disabled={view.loading}>{view.loading ? 'Running checks…' : 'Run checks'}<span aria-hidden="true">↗</span></button><button className="secondary" type="button" onClick={() => edit({ ...defaults, submission: '{"greeting":"Halo {name}","brand":"Pactra"}' })}>Fix sample</button><button className="reset" type="button" onClick={() => edit({ ...defaults })}>Reset</button></div>
-            </form>
-          </section>
-          <section className="results-panel" aria-labelledby="results-title" aria-busy={view.loading}>
-            <div className="panel-heading"><div><span className="step">02</span><h2 id="results-title">Check report</h2></div><span className="report-dot" /></div>
-            <div role="status" aria-live="polite" className="sr-only">{view.loading ? 'Running deterministic checks.' : view.result ? view.result.passed ? 'Checks passed. Human review required.' : 'Checks failed. Review the criteria below.' : 'Inputs ready. Run checks to generate a report.'}</div>
-            {view.error && <div className="error" role="alert"><strong>Could not run checks</strong><p>{view.error}</p></div>}
-            {!view.result && !view.error && <div className="empty-state"><div className={`report-icon ${view.loading ? 'loading' : ''}`} aria-hidden="true">{view.loading ? '⋯' : '≡'}</div><h3>{view.loading ? 'Inspecting your submission' : 'Your evidence starts here'}</h3><p>{view.loading ? 'Waiting for the local checker. You can edit inputs to cancel this run.' : 'Run checks to see a pass or fail for each criterion, with a reason you can inspect.'}</p><span className="empty-tag">NO REPORT YET</span></div>}
-            {view.result && <div className="report-content"><div className={`result-summary ${view.result.passed ? 'passed' : 'failed'}`}><span aria-hidden="true">{view.result.passed ? '✓' : '!'}</span><div><h3>{view.result.passed ? 'Checks passed' : 'Checks failed'}</h3><p>{view.result.checks.filter(check => check.status === 'pass').length} of {view.result.checks.length} criteria passed</p></div></div><ol className="check-list">{view.result.checks.map((check, index) => <li key={`${check.id}:${check.key}:${index}`}><div className="check-top"><strong>{labels[check.id] || check.id}</strong><span className={`status-pill ${check.status}`}>{check.status === 'pass' ? 'Pass' : 'Fail'}</span></div><code>{check.key || 'Document'}</code><p>{check.message}</p></li>)}</ol><div className="ai-note"><strong>Human review required</strong><p>{view.result.ai_review.message}</p></div></div>}
-            <div className="report-footer"><span aria-hidden="true">◇</span> Check evidence only. Not a financial authorization.</div>
-          </section>
-        </div>
-        <SemanticReview key={JSON.stringify(input)} body={reviewBody} />
-        <section className="scope-details" aria-label="Checker scope"><div><span>01 / STRUCTURE</span><h3>Matching keys</h3><p>Find missing or extra keys and empty translations.</p></div><div><span>02 / CONSTRAINTS</span><h3>Preserved intent markers</h3><p>Check placeholder tokens and exact required terms.</p></div><div><span>03 / HUMAN JUDGMENT</span><h3>Meaning still needs you</h3><p>Deterministic checks do not assess meaning. Request the separate advisory AI review when needed.</p></div></section>
-        <footer className="page-footer"><span>Pactra <span className="footer-separator">/</span> Local checker starter</span><span>No persistence. Results clear when inputs change.</span></footer>
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
+import { LandingHeader } from "../components/landing-header";
+import { ProductBanner } from "../components/product-banner";
+import { LazyEvidence } from "../components/lazy-evidence";
+import { HeadingEntrance } from "../components/heading-entrance";
+import { LandingScroll } from "../components/landing-scroll";
+const container = "mx-auto w-full max-w-[1360px] px-6 sm:px-10 lg:px-16";
+const link =
+  "group inline-flex min-h-11 items-center gap-3 text-sm font-medium text-ink underline underline-offset-4 decoration-[var(--hairline)] hover:decoration-ink";
+export const metadata: Metadata = {
+  title: "Agree on what good looks like.",
+  description: "Clear scope, inspectable evidence, human decisions.",
+};
+const steps = [
+  {
+    id: "01",
+    title: "Define the scope.",
+    text: "Source files, deliverables, review terms, and one invited worker. Put the expectations in writing before work begins.",
+    href: "/tasks/new",
+    label: "Create an agreement",
+  },
+  {
+    id: "02",
+    title: "Inspect the evidence.",
+    text: "Check JSON keys, placeholders, required terms, and empty values. Find the exact difference, not just a score.",
+    href: "/checker",
+    label: "Open the checker",
+  },
+  {
+    id: "03",
+    title: "Accept the terms.",
+    text: "The invited worker reviews and accepts the agreed scope. This release stops at an unfunded agreement—not a payment.",
+    href: "/tasks",
+    label: "Visit the workspace",
+  },
+];
+export default function HomePage() {
+  return (
+    <div className="bg-canvas text-ink">
+      <a
+        className="sr-only z-50 rounded-b-lg bg-canvas p-4 focus:not-sr-only focus:fixed focus:top-0 focus:left-1/2"
+        href="#main-content"
+      >
+        Skip to content
+      </a>
+      <LandingHeader />
+      <LandingScroll />
+      <HeadingEntrance />
+      <main id="main-content" tabIndex={-1} className="outline-none">
+        <section
+          id="agreement"
+          data-central-hero
+          className={
+            container +
+            " relative flex min-h-[680px] flex-col items-center justify-center py-20 text-center lg:min-h-[760px] lg:py-24"
+          }
+        >
+          <h1 className="mx-auto mb-7 max-w-[1040px] text-[clamp(3.15rem,7.5vw,7rem)] leading-[.99] font-medium tracking-[-.065em]">
+            Good work starts
+            <br />
+            with{" "}
+            <span className="font-serif font-normal italic tracking-[-.045em] text-[#a9583e]">
+              shared clarity.
+            </span>
+          </h1>
+          <p className="mx-auto mb-9 max-w-[560px] font-serif text-[clamp(1.2rem,2vw,1.5rem)] leading-[1.5] text-body">
+            Agree on the scope. Inspect the evidence.
+            <br className="hidden sm:block" /> Keep the final decision human.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
+            <Link
+              href="/tasks"
+              className="group inline-flex min-h-12 items-center gap-6 rounded-full bg-ink px-7 text-sm text-canvas no-underline transition-colors hover:bg-[#a9583e]"
+            >
+              Open workspace
+              <ArrowRight
+                size={18}
+                className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
+              />
+            </Link>
+            <Link href="#try-a-check" className={link}>
+              See a real check
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="mt-14 flex flex-wrap items-center justify-center gap-4 text-[11px] tracking-wide text-muted">
+            <span>01 / Clear terms</span>
+            <span
+              aria-hidden="true"
+              className="h-1 w-1 rounded-full bg-[#c5b9ab]"
+            />
+            <span>02 / Shared evidence</span>
+            <span
+              aria-hidden="true"
+              className="h-1 w-1 rounded-full bg-[#c5b9ab]"
+            />
+            <span>03 / Human decisions</span>
+          </div>
+          <p className="mt-5 mb-0 text-xs text-muted">
+            Localization JSON today. Unfunded agreements only.
+          </p>
+        </section>
+        <ProductBanner />
+        <section id="capabilities" className={container + " py-12 lg:py-20"}>
+          <div className="grid gap-8 border-t border-[var(--hairline)] pt-8 lg:grid-cols-[1fr_2fr] lg:gap-20">
+            <div>
+              <p className="mb-4 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
+                The working agreement
+              </p>
+              <h2 className="max-w-xs font-serif text-4xl leading-[1.12] font-normal">
+                One shared record.
+                <br />
+                No moving goalposts.
+              </h2>
+              <p className="mt-6 max-w-xs text-sm leading-relaxed text-muted">
+                A clear scope is a starting point—not a guarantee. Evidence
+                makes the next conversation more specific.
+              </p>
+            </div>
+            <ol className="m-0 list-none p-0">
+              {steps.map((s) => (
+                <li
+                  key={s.id}
+                  className="group grid grid-cols-[32px_1fr] gap-4 border-b border-[var(--hairline)] py-7 first:pt-0 sm:grid-cols-[48px_1fr] sm:gap-6"
+                >
+                  <span className="pt-2 font-mono text-xs text-[#a9583e]">
+                    {s.id}
+                  </span>
+                  <div>
+                    <h3 className="mb-3 text-2xl font-medium tracking-tight">
+                      {s.title}
+                    </h3>
+                    <p className="mb-4 max-w-xl font-serif text-xl leading-[1.45] text-body">
+                      {s.text}
+                    </p>
+                    <Link href={s.href} className={link}>
+                      {s.label}
+                      <ArrowUpRight
+                        size={16}
+                        className="transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none"
+                      />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+        <section id="try-a-check" className="my-8 bg-[#eee8dd] py-14 lg:py-20">
+          <div
+            className={
+              container +
+              " grid items-start gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-20"
+            }
+          >
+            <div>
+              <p className="mb-5 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
+                Small detail. Real difference.
+              </p>
+              <h2 className="mb-6 max-w-sm font-serif text-[clamp(2.6rem,4vw,3.7rem)] leading-[1.05] font-normal tracking-tight">
+                Don’t take
+                <br />
+                our word for it.
+                <br />
+                <span className="text-[#a9583e]">Check the work.</span>
+              </h2>
+              <p className="max-w-sm text-sm leading-relaxed text-body">
+                A missing placeholder can change a working translation into a
+                broken interface. Run this sample, inspect the finding, then
+                restore what’s missing.
+              </p>
+              <Link href="/checker" className={link + " mt-5"}>
+                Bring your own JSON
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="min-w-0 rounded-xl border border-[#d6cfc2] bg-canvas p-5 sm:p-8">
+              <LazyEvidence />
+            </div>
+          </div>
+        </section>
+        <section
+          id="principles"
+          className={
+            container +
+            " grid gap-10 py-16 lg:grid-cols-[1.4fr_1fr] lg:gap-24 lg:py-24"
+          }
+        >
+          <div>
+            <p className="mb-6 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
+              A deliberate boundary
+            </p>
+            <h2 className="max-w-2xl font-serif text-[clamp(2.8rem,4.5vw,4rem)] leading-[1.08] font-normal tracking-tight">
+              Tools can surface evidence.
+              <br />
+              <span className="text-[#a9583e]">People make the call.</span>
+            </h2>
+          </div>
+          <div className="self-center">
+            <p className="font-serif text-xl leading-relaxed">
+              AI can help review meaning. It does not accept work, settle
+              disputes, or authorize a payment. A successful check is
+              evidence—not a verdict.
+            </p>
+            <aside
+              id="release"
+              className="mt-8 border-t border-[var(--hairline)] pt-5 text-sm leading-relaxed text-muted"
+            >
+              <strong className="block text-ink">
+                Current release — unfunded agreements.
+              </strong>
+              Funding, payouts, disputes, and stored submissions are not
+              available.
+            </aside>
+          </div>
+        </section>
+        <section
+          id="journal"
+          className={container + " pb-20 lg:pb-28"}
+          aria-labelledby="journal-title"
+        >
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-[var(--hairline)] pt-7 pb-8">
+            <h2 id="journal-title" className="m-0 text-xl font-medium">
+              From the Pactra journal
+            </h2>
+            <span className="font-mono text-[11px] tracking-wider uppercase text-muted">
+              Ideas behind the product
+            </span>
+          </div>
+          <Link
+            href="/journal/introducing-pactra"
+            className="group grid overflow-hidden rounded-xl bg-[#eee8dd] text-ink no-underline transition-colors hover:bg-[#e8e0d2] lg:grid-cols-[.7fr_1.3fr]"
+          >
+            <div
+              aria-hidden="true"
+              className="relative flex min-h-56 flex-col justify-between overflow-hidden bg-[#a9583e] p-8 text-canvas sm:p-10"
+            >
+              <span className="font-mono text-xs tracking-[.15em] uppercase">
+                Pactra / Project notes
+              </span>
+              <span className="mt-12 font-serif text-6xl leading-[.95] tracking-tight sm:text-7xl">
+                On the
+                <br />
+                <span className="italic">same page.</span>
+              </span>
+              <span className="mt-8 h-px w-full bg-white/40" />
+            </div>
+            <div className="flex flex-col justify-center p-7 sm:p-10 lg:p-14">
+              <p className="mb-5 font-mono text-xs tracking-wider uppercase text-muted">
+                Introducing Pactra
+              </p>
+              <h3 className="mb-5 max-w-xl font-serif text-[clamp(2rem,3.5vw,3.2rem)] leading-[1.08] font-normal tracking-tight group-hover:underline decoration-1 underline-offset-4">
+                A shared definition of done.
+              </h3>
+              <p className="mb-8 max-w-xl font-serif text-xl leading-relaxed">
+                Why clear scope comes first. What the checker actually proves.
+                Where AI belongs—and why acceptance stays human. An in-depth
+                look at the project, drawn from its documentation.
+              </p>
+              <span className="inline-flex min-h-11 items-center gap-4 text-sm font-medium">
+                Read the project story
+                <ArrowUpRight
+                  size={18}
+                  className="transition-transform group-hover:-translate-y-1 motion-reduce:transform-none"
+                />
+              </span>
+            </div>
+          </Link>
+        </section>
       </main>
+      <footer className="bg-ink py-10 text-canvas">
+        <div className={container}>
+          <div className="flex flex-col justify-between gap-7 border-b border-white/20 pb-9 sm:flex-row sm:items-center">
+            <Link
+              href="/"
+              className="text-4xl font-semibold tracking-[-2px] text-canvas no-underline"
+            >
+              PACTRA<span className="text-[#cc785c]">.</span>
+            </Link>
+            <p className="m-0 font-serif text-2xl text-canvas">
+              Start with clarity.
+            </p>
+          </div>
+          <div className="flex flex-col justify-between gap-6 pt-7 sm:flex-row">
+            <p className="m-0 text-xs text-[#b0aea5]">
+              Built by allevi.dev. For work worth agreeing on.
+            </p>
+            <nav
+              aria-label="Footer resources"
+              className="flex flex-wrap gap-x-7 gap-y-3"
+            >
+              {[
+                ["Workspace", "/tasks"],
+                ["Checker", "/checker"],
+                [
+                  "Documentation",
+                  "https://github.com/zDarkx1/Pactra/tree/interface/anthropic-landing/docs",
+                ],
+              ].map(([label, href]) => (
+                <Link
+                  key={label}
+                  href={href}
+                  className="inline-flex min-h-11 items-center text-sm text-[#b0aea5] no-underline hover:text-canvas hover:underline"
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+      </footer>
     </div>
-  </div>;
+  );
 }

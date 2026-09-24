@@ -61,13 +61,40 @@ func workspaceEnvironment(get func(string) string) (string, workspace.Config, er
 	}
 	return dsn, cfg, nil
 }
+
+// Require the complete current schema and exact operation privileges, not only a DB ping.
+const workspaceSchemaQuery = `SELECT coalesce(bool_and(
+ to_regclass('pactra.'||name) IS NOT NULL AND
+ has_table_privilege(current_user,to_regclass('pactra.'||name),'SELECT') AND
+ has_table_privilege(current_user,to_regclass('pactra.'||name),'INSERT') AND
+ (NOT mutable OR has_table_privilege(current_user,to_regclass('pactra.'||name),'UPDATE'))
+),false) AND has_schema_privilege(current_user,'pactra','USAGE')
+FROM (VALUES ('accounts',false),('challenge_limits',true),('challenges',true),('sessions',false),('tasks',true),('task_idempotency',false),('delivery_events',false),('delivery_idempotency',false),('ai_usage_global',true),('ai_usage_wallet',true)) AS required(name,mutable)`
+
 func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) string) (http.Handler, func(), error) {
 	dsn, cfg, err := workspaceEnvironment(get)
 	if err != nil {
 		return nil, nil, err
 	}
 	if dsn == "" {
-		return fallback, func() {}, nil
+		mux := http.NewServeMux()
+		mux.Handle("/", fallback)
+		mux.HandleFunc("/api/v1/review", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Cache-Control", "no-store")
+			w.WriteHeader(503)
+			_, _ = w.Write([]byte(`{"error":"Authenticated workspace and explicit AI budgets are required"}`))
+		})
+		return mux, func() {}, nil
+	}
+	cfg.AIHandler = fallback
+	if get("PACTRA_PUBLIC_AI_ENABLED") == "true" {
+		wallet, e1 := strconv.Atoi(get("PACTRA_AI_WALLET_DAILY"))
+		global, e2 := strconv.Atoi(get("PACTRA_AI_GLOBAL_DAILY"))
+		if e1 != nil || e2 != nil || wallet < 1 || wallet > workspace.MaxAIWalletDaily || global < 1 || global > workspace.MaxAIGlobalDaily {
+			return nil, nil, errors.New("invalid explicit AI daily request limits")
+		}
+		cfg.AILimits = workspace.AIBudgetLimits{WalletDaily: wallet, GlobalDaily: global}
 	}
 	pc, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
@@ -105,7 +132,7 @@ func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) 
 		return nil, nil, errors.New("invalid workspace auth configuration")
 	}
 	var schema bool
-	if err = pool.QueryRow(probe, "SELECT to_regclass('pactra.tasks') IS NOT NULL").Scan(&schema); err != nil || !schema {
+	if err = pool.QueryRow(probe, workspaceSchemaQuery).Scan(&schema); err != nil || !schema {
 		pool.Close()
 		return nil, nil, errors.New("workspace migration is missing")
 	}
@@ -115,12 +142,14 @@ func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) 
 	mux.Handle("/api/v1/me", h)
 	mux.Handle("/api/v1/tasks", h)
 	mux.Handle("/api/v1/tasks/", h)
+	mux.Handle("/api/v1/review", h)
 	mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
 		c, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
-		if pool.Ping(c) != nil {
+		var schemaReady bool
+		if pool.QueryRow(c, workspaceSchemaQuery).Scan(&schemaReady) != nil || !schemaReady {
 			w.WriteHeader(503)
 			_, _ = w.Write([]byte(`{"status":"unavailable"}`))
 			return

@@ -1,0 +1,7 @@
+# Fullscreen scroll scene — supersedes initial small zoom
+
+The user clarified that expansion must fill the viewport, not scale a card slightly. The product visual now follows the intro as a dedicated native-sticky200svh scene. GSAP opens a clip-path from a right-hand card on desktop (inset card on mobile) to zero inset; the visual occupies100vw×100svh, including above the header while the scene is active. Intro copy exits left, product text grows/recenters, supporting text settles in, and a thin progress rule completes before normal content resumes.
+
+This is not the browser Fullscreen API and does not intercept wheel/touch. No GSAP pin spacer. Reduced motion removes the extended height/sticky behavior and shows a regular full-width static section; absent JS leaves content visible. Desktop/mobile matchMedia reinitializes at breakpoint changes. Canvas dimensions stay fixed through expansion: clipping and transforms avoid per-frame canvas resize. GhostFibers24fps/DPR0.8 limits fullscreen GPU cost; this is not a device FPS guarantee.
+
+Browser acceptance: at full expansion desktop panel bounds x0/y0/w1440/h1000 with clip inset(0%); desktop1440/mobile390 tests verify fullscreen, no horizontal overflow/pageerror, working pause, and reduced-motion cleanup. Screenshots inspected. Previous layout and tiny-scale assertions are superseded; scripts/landing-layout.browser.mjs now checks fullscreen bounds.

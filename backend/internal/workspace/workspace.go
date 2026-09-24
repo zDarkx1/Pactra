@@ -30,6 +30,8 @@ type Config struct {
 	Domain, URI string
 	ChainID     int64
 	Arbiters    []string
+	AIHandler   http.Handler
+	AILimits    AIBudgetLimits
 }
 type server struct {
 	pool     *pgxpool.Pool
@@ -74,8 +76,14 @@ func New(pool *pgxpool.Pool, c Config) (http.Handler, error) {
 	m.HandleFunc("GET /api/v1/tasks/{id}", s.auth(s.get))
 	m.HandleFunc("POST /api/v1/tasks/{id}/accept", s.auth(s.accept))
 	m.HandleFunc("POST /api/v1/tasks/{id}/cancel", s.auth(s.cancel))
+	s.registerDelivery(m)
+	m.HandleFunc("POST /api/v1/review", s.budgetedAI(c.AIHandler, c.AILimits))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		timeout := 5 * time.Second
+		if r.URL.Path == "/api/v1/review" {
+			timeout = 35 * time.Second
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 		w.Header().Set("Cache-Control", "no-store")
 		m.ServeHTTP(w, r.WithContext(ctx))

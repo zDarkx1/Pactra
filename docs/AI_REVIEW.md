@@ -1,5 +1,9 @@
 # AI review design
 
+## Research grounding
+See [Research evidence](RESEARCH_EVIDENCE.md) for primary sources from NYC DCWP, W3C Internationalization and NIST, the precise claims they support, and limits on extrapolation. External sources motivate the design; they do not prove Pactra reduces disputes or certify its implementation.
+
+
 **Update:** The semantic Azure adapter and explicit-consent UI are now implemented; see [AZURE_AI](AZURE_AI.md). Criteria generation and dispute/amendment assistance below remain future design. Deterministic /check still never calls AI; use separate /review.
 
 The original starter response explicitly returns ai_review.status=not_configured. There is no provider secret, network inference, mock score or fake success.
