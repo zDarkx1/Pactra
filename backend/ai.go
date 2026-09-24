@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"mime"
 	"net"
 	"net/http"
@@ -112,7 +113,7 @@ func (h *aiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if h.active || now.Before(h.next) {
 		retry := 10
 		if !h.active {
-			retry = int(h.next.Sub(now).Seconds()) + 1
+			retry = int(math.Ceil(h.next.Sub(now).Seconds()))
 		}
 		h.mu.Unlock()
 		busy(w, retry)

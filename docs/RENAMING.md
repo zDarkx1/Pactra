@@ -66,3 +66,15 @@ Hosted database cutover and real-wallet checks remain unverified by this pass.
   pactra-api binary build passed. The full suite is not reported as green.
 - The new origin was saved, but git ls-remote returned Repository not found.
   Confirm the repository URL and access rights before pushing. No push occurred.
+
+## Cooldown boundary fix — 2026-09-24
+
+- TestAIFailedAttemptsCooldown failed deterministically on Windows because the
+  Retry-After computation truncated the remaining seconds and added one; when the
+  coarse Windows clock returns identical timestamps for both time.Now() calls the
+  result was 11 instead of 10. backend/ai.go now takes the ceiling of the
+  remaining cooldown seconds. No API semantics changed.
+- Verified on Windows: the cooldown, concurrency and redirect/timeout tests pass
+  with -count=20; the full Go suite passes with the race detector after enabling
+  cgo with a local WinLibs GCC toolchain (winget, user scope). gofmt -l noise on
+  this checkout is the CRLF autocrlf artifact, unchanged by this fix.
