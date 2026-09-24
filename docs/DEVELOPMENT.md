@@ -1,7 +1,7 @@
 # Local development
 
 ## Prerequisites
-Node24.x, npm and Go1.27.1 (see backend/go.mod). Verify `node --version`, `npm --version`, `go version`. Install dependencies using `npm ci` from the repository root; the root package-lock.json is authoritative. Do not create a second frontend lockfile.
+Node24.x, npm and Go1.27.1 (see backend/go.mod). Verify `node --version`, `npm --version`, `go version`. Install dependencies using `npm ci` from the repository root; the root package-lock.json is authoritative. Do not create a second frontend lockfile. Contracts need Foundry v1.8.3 pinned per [contracts/README](../contracts/README.md); run `git submodule update --init --recursive` once after cloning.
 
 ## Environment
 Defaults work without any env files.

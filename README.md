@@ -57,7 +57,7 @@ Open http://127.0.0.1:3000. Click **Run checks** with the supplied example, then
 ```text
 frontend/       Next.js workbench and bounded backend-for-frontend route
 backend/        Go HTTP API and deterministic checker
-contracts/      Contract team handoff, decisions and acceptance tests (no deployed escrow)
+contracts/      Pinned Foundry toolchain, tests and deployment records (no deployed escrow)
 docs/           Product, architecture, frontend/backend and delivery guides
 examples/       Safe example inputs; not real customer documents
 scripts/        Documentation checks
@@ -86,6 +86,10 @@ cd backend
 go test -race ./...
 go vet ./...
 go build ./cmd/server
+cd contracts
+forge fmt --check
+forge build --sizes
+forge test
 ```
 
 ## Contribution policy
