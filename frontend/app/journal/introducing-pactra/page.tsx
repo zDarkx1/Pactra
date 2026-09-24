@@ -7,6 +7,21 @@ export const metadata: Metadata = {
   description:
     "Why Pactra starts with clear scope, reproducible localization checks, and human decisions—and where its current release stops.",
 };
+import { projectEvidence } from "../../../lib/project-evidence";
+import { HeadingEntrance } from "../../../components/heading-entrance";
+function EvidenceCite({ n }: { n: number }) {
+  return (
+    <sup className="ml-1 font-sans text-xs">
+      <a
+        href={"#evidence-" + n}
+        aria-label={"External evidence " + n}
+        className="text-[#a9583e] underline"
+      >
+        [E{n}]
+      </a>
+    </sup>
+  );
+}
 const sources = [
   ["PRODUCT.md", "Product scope and the acceptance problem"],
   ["CHECKER.md", "Deterministic checker specification"],
@@ -23,7 +38,8 @@ const toc = [
   ["ai-boundary", "Where AI belongs"],
   ["settlement", "The settlement design"],
   ["current-release", "What exists today"],
-  ["sources", "Source documents"],
+  ["external-evidence", "External evidence"],
+  ["sources", "Implementation notes"],
 ];
 function Cite({ n }: { n: number }) {
   return (
@@ -51,6 +67,7 @@ export default function IntroducingPactra() {
         Skip to article
       </a>
       <LandingHeader />
+      <HeadingEntrance />
       <main id="main-content" tabIndex={-1} className="outline-none">
         <article>
           <header className="mx-auto max-w-[1120px] px-6 pt-10 pb-12 sm:px-10 lg:pt-20 lg:pb-16">
@@ -103,9 +120,15 @@ export default function IntroducingPactra() {
             </aside>
             <div className="min-w-0 space-y-12 font-serif text-[20px] leading-[1.7] text-body [&_p]:mb-6 [&_li]:mb-3">
               <section id="why-pactra" className={section}>
-                <h2 className={h2}>
-                  The disagreement often starts before delivery.
-                </h2>
+                <h2 className={h2}>Why start with written terms?</h2>
+                <p>
+                  NYC’s Department of Consumer and Worker Protection requires
+                  covered freelance contracts worth $800 or more to be written
+                  and specify work, pay, and payment date.
+                  <EvidenceCite n={1} /> This is a jurisdiction-specific example
+                  of why explicit terms matter—not a claim that Pactra complies
+                  with that law or that the rule applies everywhere.
+                </p>
                 <p>
                   A buyer and a freelancer can look at the same finished work
                   and see different things. One sees a missing requirement; the
@@ -174,6 +197,15 @@ export default function IntroducingPactra() {
               </section>
               <section id="checking-work" className={section}>
                 <h2 className={h2}>A check should explain what changed.</h2>
+                <p>
+                  W3C Internationalization guidance explains that composite
+                  messages can fail across languages because sentence structure
+                  and grammatical agreement differ.
+                  <EvidenceCite n={2} /> That supports a distinction between
+                  structural checks and linguistic judgment; it does not certify
+                  this checker or establish that flat JSON is the best market
+                  entry point.
+                </p>
                 <p>
                   The deterministic checker accepts flat JSON objects with
                   string values. It compares the source with a submission and
@@ -258,6 +290,14 @@ export default function IntroducingPactra() {
               </section>
               <section id="ai-boundary" className={section}>
                 <h2 className={h2}>AI advises. It does not accept.</h2>
+                <p>
+                  NIST’s Generative AI Profile describes confabulation as
+                  confidently presented erroneous or false content and warns
+                  about users acting on it in consequential decisions.
+                  <EvidenceCite n={3} /> Keeping AI advisory is our design
+                  response, not a NIST endorsement. Human reviewers can also be
+                  wrong.
+                </p>
                 <p>
                   Some differences are structural; others are about meaning.
                   “Payment is pending” and “payment succeeded” could both be
@@ -380,6 +420,33 @@ export default function IntroducingPactra() {
                   Explore the checker
                   <ArrowRight size={16} />
                 </Link>
+              </section>
+              <section id="external-evidence" className={section}>
+                <h2 className={h2}>External evidence. Explicit limits.</h2>
+                <p>
+                  These primary sources support the problem framing and risk
+                  boundaries. They do not prove that Pactra reduces disputes,
+                  speeds payment, improves translation quality, or guarantees
+                  enforceability. Those outcomes require interviews,
+                  independently reviewed test cases, and a measured pilot—not
+                  stronger marketing language.
+                </p>
+                <ol className="list-none p-0 font-sans text-sm">
+                  {projectEvidence.map((s) => (
+                    <li
+                      key={s.id}
+                      id={"evidence-" + s.id}
+                      className="scroll-mt-24 border-b border-[var(--hairline)] py-5"
+                    >
+                      <a href={s.url} className="text-ink underline">
+                        [E{s.id}] {s.title}
+                      </a>
+                      <blockquote className="mx-0 mt-3 text-sm leading-relaxed text-muted">
+                        “{s.quote}”
+                      </blockquote>
+                    </li>
+                  ))}
+                </ol>
               </section>
               <section id="sources" className={section}>
                 <h2 className={h2}>From the project documentation.</h2>

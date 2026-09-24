@@ -1,7 +1,10 @@
 # Product scope
 
-## Problem and initial audience
-Buyer and freelancer disagree over acceptance because requirements are vague, change after delivery, or one flawed deliverable blocks every payment. Start with flat JSON localization files, not arbitrary freelance work.
+## Research grounding
+See [Research evidence](RESEARCH_EVIDENCE.md) for primary sources from NYC DCWP, W3C Internationalization and NIST, the precise claims they support, and limits on extrapolation. External sources motivate the design; they do not prove Pactra reduces disputes or certify its implementation.
+
+## Problem hypothesis and initial audience
+The team hypothesizes that unclear or changing acceptance requirements can create buyer–worker disagreements and that separate deliverable allocations may avoid holding unrelated work together. These are design hypotheses, not measured prevalence or proven outcomes. Start with flat JSON localization files, not arbitrary freelance work.
 
 ## Proposed end-to-end product (NOT implemented)
 1. Buyer drafts an acceptance manifest; AI may suggest missing questions, never invent binding terms.

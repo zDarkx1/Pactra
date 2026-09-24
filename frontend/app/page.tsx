@@ -3,15 +3,15 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
 import { LandingHeader } from "../components/landing-header";
 import { ProductBanner } from "../components/product-banner";
-import LandingEvidence from "../components/landing-evidence";
+import { LazyEvidence } from "../components/lazy-evidence";
+import { HeadingEntrance } from "../components/heading-entrance";
 import { LandingScroll } from "../components/landing-scroll";
 const container = "mx-auto w-full max-w-[1360px] px-6 sm:px-10 lg:px-16";
 const link =
   "group inline-flex min-h-11 items-center gap-3 text-sm font-medium text-ink underline underline-offset-4 decoration-[var(--hairline)] hover:decoration-ink";
 export const metadata: Metadata = {
   title: "Agree on what good looks like.",
-  description:
-    "Clear scope, inspectable evidence, human decisions.",
+  description: "Clear scope, inspectable evidence, human decisions.",
 };
 const steps = [
   {
@@ -47,6 +47,7 @@ export default function HomePage() {
       </a>
       <LandingHeader />
       <LandingScroll />
+      <HeadingEntrance />
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           id="agreement"
@@ -56,7 +57,6 @@ export default function HomePage() {
           }
         >
           <div>
-
             <h1 className="mb-7 max-w-[620px] text-[clamp(3.1rem,5.4vw,5.1rem)] leading-[1.02] font-semibold tracking-[-.055em]">
               Agree on what
               <br />
@@ -167,7 +167,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="min-w-0 rounded-xl border border-[#d6cfc2] bg-canvas p-5 sm:p-8">
-              <LandingEvidence />
+              <LazyEvidence />
             </div>
           </div>
         </section>

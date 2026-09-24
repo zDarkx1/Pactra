@@ -1,5 +1,9 @@
 # Deterministic checker specification
 
+## Research grounding
+See [Research evidence](RESEARCH_EVIDENCE.md) for primary sources from NYC DCWP, W3C Internationalization and NIST, the precise claims they support, and limits on extrapolation. External sources motivate the design; they do not prove Pactra reduces disputes or certify its implementation.
+
+
 Version: localization-v1. Input scope: flat string-valued JSON dictionaries only.
 
 1. **Key parity:** every source key must appear in submission; extra keys fail. JSON key ordering must not change results.
