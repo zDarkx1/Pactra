@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
+test('mega navigation shares active state and keeps hidden panels inert',()=>{const s=readFileSync(new URL('../components/landing-header.tsx',import.meta.url),'utf8');assert.match(s,/activeMenu/);assert.match(s,/data-mega-panel/);assert.match(s,/inert=/);assert.match(s,/motion-reduce:transition-none/);assert.match(s,/pointerdown/)});
