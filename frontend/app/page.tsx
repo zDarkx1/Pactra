@@ -1,57 +1,39 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
 import { LandingHeader } from "../components/landing-header";
 import { ProductBanner } from "../components/product-banner";
 import LandingEvidence from "../components/landing-evidence";
-const container =
-  "mx-auto w-[calc(min(89.5rem,100vw)-clamp(2rem,1.08163rem+3.91837vw,5rem)*2)]";
-const gap = "gap-[clamp(1.75rem,1.67347rem+.32653vw,2rem)]";
+const container = "mx-auto w-full max-w-[1360px] px-6 sm:px-10 lg:px-16";
+const link =
+  "group inline-flex min-h-11 items-center gap-3 text-sm font-medium text-ink underline underline-offset-4 decoration-[var(--hairline)] hover:decoration-ink";
 export const metadata: Metadata = {
-  title: "Clear agreements. Shared evidence.",
+  title: "Agree on what good looks like.",
   description:
-    "Private work agreements and evidence-linked localization review. Human decisions, with clear boundaries.",
+    "Clear scope, inspectable evidence, human decisions. A shared starting point for work.",
 };
-const capabilities = [
+const steps = [
   {
-    title: "Start with an agreement",
-    text: "Put the source, deliverables, review terms, and invited worker in one shared record before the work begins.",
-    kind: "Agreements",
-    state: "Available",
-    detail: "Private workspace",
+    id: "01",
+    title: "Define the scope.",
+    text: "Source files, deliverables, review terms, and one invited worker. Put the expectations in writing before work begins.",
     href: "/tasks/new",
-    cta: "Create an agreement",
+    label: "Create an agreement",
   },
   {
-    title: "Inspect every translation",
-    text: "Compare source keys, placeholders, required terms, and empty values. Read the evidence behind each result before making a decision.",
-    kind: "Localization",
-    state: "Available",
-    detail: "Deterministic checks",
+    id: "02",
+    title: "Inspect the evidence.",
+    text: "Check JSON keys, placeholders, required terms, and empty values. Find the exact difference, not just a score.",
     href: "/checker",
-    cta: "Open the checker",
+    label: "Open the checker",
   },
   {
-    title: "Keep decisions human",
-    text: "AI can help review meaning. It does not accept work, settle disputes, or authorize a payment. Those boundaries stay explicit.",
-    kind: "Product principles",
-    state: "Advisory only",
-    detail: "No automated payout",
-    href: "#principles",
-    cta: "Explore our approach",
+    id: "03",
+    title: "Accept the terms.",
+    text: "The invited worker reviews and accepts the agreed scope. This release stops at an unfunded agreement—not a payment.",
+    href: "/tasks",
+    label: "Visit the workspace",
   },
-];
-const resources = [
-  ["Write down the acceptance criteria", "Agreements", "/tasks/new"],
-  ["Review the same source snapshot", "Workspace", "/tasks"],
-  ["Check keys and placeholders", "Localization", "/checker"],
-  ["Separate advice from acceptance", "Principles", "#principles"],
-  ["Understand the current release", "Development", "#release"],
-  [
-    "Read the development documentation",
-    "Documentation",
-    "https://github.com/zDarkx1/Pactra/tree/interface/anthropic-landing/docs",
-  ],
 ];
 export default function HomePage() {
   return (
@@ -65,203 +47,205 @@ export default function HomePage() {
       <LandingHeader />
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
+          id="agreement"
           className={
-            container + " pt-[88.875px] pb-[54px] lg:pt-[150.6px] lg:pb-[100px]"
+            container +
+            " grid gap-12 pt-12 pb-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16 lg:pt-16 lg:pb-20"
           }
         >
-          <div className={"grid " + gap + " lg:grid-cols-12 lg:items-end"}>
-            <h1 className="m-0 text-[clamp(2.52rem,2.05rem+1.955vw,3.81rem)] leading-[1.1] font-bold tracking-[-.04em] lg:col-span-7">
-              Work{" "}
+          <div>
+            <p className="mb-8 flex items-center gap-3 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
+              <span className="h-px w-8 bg-[#a9583e]" />A shared starting point
+            </p>
+            <h1 className="mb-7 max-w-[620px] text-[clamp(3.1rem,5.4vw,5.1rem)] leading-[1.02] font-semibold tracking-[-.055em]">
+              Agree on what
+              <br />
+              <span className="font-serif font-normal italic text-[#a9583e]">
+                good
+              </span>{" "}
+              looks like.
+            </h1>
+            <p className="mb-8 max-w-[440px] font-serif text-[22px] leading-[1.45]">
+              Less room for interpretation.
+              <br />
+              More room for good work. Bring the scope and its evidence into the
+              same conversation.
+            </p>
+            <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
               <Link
                 href="/tasks"
-                className="text-ink underline decoration-[3px] underline-offset-[5px] hover:decoration-[#cc785c]"
+                className="group inline-flex min-h-12 items-center gap-5 rounded-lg bg-ink px-5 text-sm text-canvas no-underline transition-colors hover:bg-[#a9583e]"
               >
-                agreements
-              </Link>{" "}
-              and{" "}
-              <Link
-                href="/checker"
-                className="text-ink underline decoration-[3px] underline-offset-[5px] hover:decoration-[#cc785c]"
-              >
-                evidence
-              </Link>{" "}
-              that put clarity at the center
-            </h1>
-            <p className="m-0 font-serif text-2xl leading-[1.4] lg:col-span-5 lg:pb-1">
-              Good work begins with a shared understanding. Pactra brings clear
-              terms and inspectable evidence together, so people can make
-              informed decisions.
+                Open workspace
+                <ArrowRight
+                  size={18}
+                  className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
+                />
+              </Link>
+              <Link href="#try-a-check" className={link}>
+                See a real check
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+            <p className="mt-6 mb-0 text-xs text-muted">
+              Localization JSON today. Human decisions, always.
             </p>
           </div>
-        </section>
-        <div id="agreement" className={container}>
           <ProductBanner />
-        </div>
-        <section
-          id="capabilities"
-          className={container + " pt-[clamp(5.55rem,6vw,9.42rem)]"}
-        >
-          <h2 className="mb-8 text-2xl font-semibold">
-            Build on clear foundations
-          </h2>
-          <div className={"grid lg:grid-cols-3 " + gap}>
-            {capabilities.map((item) => (
-              <article
-                key={item.title}
-                className="flex min-h-[520px] flex-col rounded-2xl bg-[#e8dfd0] p-[clamp(1.75rem,1.67347rem+.32653vw,2rem)] lg:min-h-[560px]"
-              >
-                <h3 className="mb-4 text-2xl leading-[1.3] font-semibold">
-                  {item.title}
-                </h3>
-                <p className="mb-16 font-serif text-xl leading-[1.4]">
-                  {item.text}
-                </p>
-                <dl className="mt-auto mb-8 text-sm">
-                  {[
-                    ["Status", item.state],
-                    ["Category", item.kind],
-                    ["Details", item.detail],
-                  ].map(([k, v]) => (
-                    <div
-                      key={k}
-                      className="flex min-h-12 items-center justify-between gap-4 border-b border-[#c9c0b1] first:border-t"
-                    >
-                      <dt className="font-mono text-xs uppercase">{k}</dt>
-                      <dd className="m-0 text-right">{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-                <Link
-                  href={item.href}
-                  className="group flex min-h-11 w-fit items-center gap-4 rounded-lg bg-ink px-4 text-sm text-canvas no-underline transition-colors hover:bg-[#3d3d3a]"
+        </section>
+        <section id="capabilities" className={container + " py-12 lg:py-20"}>
+          <div className="grid gap-8 border-t border-[var(--hairline)] pt-8 lg:grid-cols-[1fr_2fr] lg:gap-20">
+            <div>
+              <p className="mb-4 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
+                The working agreement
+              </p>
+              <h2 className="max-w-xs font-serif text-4xl leading-[1.12] font-normal">
+                One shared record.
+                <br />
+                No moving goalposts.
+              </h2>
+              <p className="mt-6 max-w-xs text-sm leading-relaxed text-muted">
+                A clear scope is a starting point—not a guarantee. Evidence
+                makes the next conversation more specific.
+              </p>
+            </div>
+            <ol className="m-0 list-none p-0">
+              {steps.map((s) => (
+                <li
+                  key={s.id}
+                  className="group grid grid-cols-[32px_1fr] gap-4 border-b border-[var(--hairline)] py-7 first:pt-0 sm:grid-cols-[48px_1fr] sm:gap-6"
                 >
-                  {item.cta}
-                  <ArrowRight
-                    size={16}
-                    className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
-                  />
-                </Link>
-              </article>
-            ))}
+                  <span className="pt-2 font-mono text-xs text-[#a9583e]">
+                    {s.id}
+                  </span>
+                  <div>
+                    <h3 className="mb-3 text-2xl font-medium tracking-tight">
+                      {s.title}
+                    </h3>
+                    <p className="mb-4 max-w-xl font-serif text-xl leading-[1.45] text-body">
+                      {s.text}
+                    </p>
+                    <Link href={s.href} className={link}>
+                      {s.label}
+                      <ArrowUpRight
+                        size={16}
+                        className="transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none"
+                      />
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+        <section id="try-a-check" className="my-8 bg-[#eee8dd] py-14 lg:py-20">
+          <div
+            className={
+              container +
+              " grid items-start gap-10 lg:grid-cols-[.8fr_1.2fr] lg:gap-20"
+            }
+          >
+            <div>
+              <p className="mb-5 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
+                Small detail. Real difference.
+              </p>
+              <h2 className="mb-6 max-w-sm font-serif text-[clamp(2.6rem,4vw,3.7rem)] leading-[1.05] font-normal tracking-tight">
+                Don’t take
+                <br />
+                our word for it.
+                <br />
+                <span className="text-[#a9583e]">Check the work.</span>
+              </h2>
+              <p className="max-w-sm text-sm leading-relaxed text-body">
+                A missing placeholder can change a working translation into a
+                broken interface. Run this sample, inspect the finding, then
+                restore what’s missing.
+              </p>
+              <Link href="/checker" className={link + " mt-5"}>
+                Bring your own JSON
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="min-w-0 rounded-xl border border-[#d6cfc2] bg-canvas p-5 sm:p-8">
+              <LandingEvidence />
+            </div>
           </div>
         </section>
         <section
           id="principles"
-          className={container + " grid py-[90px] lg:grid-cols-3 " + gap}
-        >
-          <h2 className="max-w-[300px] text-2xl leading-[1.3] font-semibold">
-            At Pactra, clear agreements come before confident decisions.
-          </h2>
-          <div className="lg:col-span-2">
-            {resources.map(([title, kind, href]) => (
-              <Link
-                href={href}
-                key={title}
-                className="group flex min-h-14 flex-col justify-center gap-2 border-b border-[#d6d2c8] py-4 text-ink no-underline transition-colors hover:bg-[#efe9de] sm:flex-row sm:items-center sm:justify-between sm:py-3"
-              >
-                <span className="font-medium group-hover:underline">
-                  {title}
-                </span>
-                <span className="shrink-0 text-sm text-muted">{kind}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-        <section id="try-a-check" className={container + " mb-20"}>
-          <details className="rounded-xl border border-[var(--hairline)] p-6">
-            <summary className="cursor-pointer text-xl font-semibold">
-              Try a real localization check
-            </summary>
-            <div className="mt-8 max-w-3xl">
-              <LandingEvidence />
-            </div>
-          </details>
-        </section>
-        <aside
-          id="release"
           className={
             container +
-            " mb-20 border-t border-[var(--hairline)] pt-6 text-sm text-muted"
+            " grid gap-10 py-16 lg:grid-cols-[1.4fr_1fr] lg:gap-24 lg:py-24"
           }
         >
-          <strong className="text-ink">
-            Current release — unfunded agreements.
-          </strong>{" "}
-          Funding, payouts, disputes, and stored submissions are not available.
-          The checker is not an acceptance or payment authorization.
-        </aside>
+          <div>
+            <p className="mb-6 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
+              A deliberate boundary
+            </p>
+            <h2 className="max-w-2xl font-serif text-[clamp(2.8rem,4.5vw,4rem)] leading-[1.08] font-normal tracking-tight">
+              Tools can surface evidence.
+              <br />
+              <span className="text-[#a9583e]">People make the call.</span>
+            </h2>
+          </div>
+          <div className="self-center">
+            <p className="font-serif text-xl leading-relaxed">
+              AI can help review meaning. It does not accept work, settle
+              disputes, or authorize a payment. A successful check is
+              evidence—not a verdict.
+            </p>
+            <aside
+              id="release"
+              className="mt-8 border-t border-[var(--hairline)] pt-5 text-sm leading-relaxed text-muted"
+            >
+              <strong className="block text-ink">
+                Current release — unfunded agreements.
+              </strong>
+              Funding, payouts, disputes, and stored submissions are not
+              available.
+            </aside>
+          </div>
+        </section>
       </main>
-      <footer className="bg-ink py-20 text-canvas">
-        <div
-          className={
-            container + " grid gap-12 lg:grid-cols-[1.3fr_repeat(4,1fr)]"
-          }
-        >
-          <div className="flex flex-col justify-between gap-10">
+      <footer className="bg-ink py-10 text-canvas">
+        <div className={container}>
+          <div className="flex flex-col justify-between gap-7 border-b border-white/20 pb-9 sm:flex-row sm:items-center">
             <Link
               href="/"
-              className="text-3xl font-semibold tracking-[-1px] text-canvas no-underline"
+              className="text-4xl font-semibold tracking-[-2px] text-canvas no-underline"
             >
-              PACTRA
+              PACTRA<span className="text-[#cc785c]">.</span>
             </Link>
-            <p className="mb-0 text-xs text-[#b0aea5]">
-              For work with a clear set of terms.
-              <br />
-              Built by allevi.dev.
+            <p className="m-0 font-serif text-2xl text-canvas">
+              Start with clarity.
             </p>
           </div>
-          {[
-            {
-              title: "Product",
-              links: [
+          <div className="flex flex-col justify-between gap-6 pt-7 sm:flex-row">
+            <p className="m-0 text-xs text-[#b0aea5]">
+              Built by allevi.dev. For work worth agreeing on.
+            </p>
+            <nav
+              aria-label="Footer resources"
+              className="flex flex-wrap gap-x-7 gap-y-3"
+            >
+              {[
                 ["Workspace", "/tasks"],
-                ["New agreement", "/tasks/new"],
-                ["Localization checker", "/checker"],
-              ],
-            },
-            {
-              title: "Approach",
-              links: [
-                ["Clear scope", "#principles"],
-                ["Shared evidence", "/checker"],
-                ["Human decisions", "#principles"],
-              ],
-            },
-            {
-              title: "Resources",
-              links: [
+                ["Checker", "/checker"],
                 [
                   "Documentation",
                   "https://github.com/zDarkx1/Pactra/tree/interface/anthropic-landing/docs",
                 ],
-                ["Source code", "https://github.com/zDarkx1/Pactra"],
-                ["Current release", "#release"],
-              ],
-            },
-            {
-              title: "Get started",
-              links: [
-                ["Open Pactra", "/tasks"],
-                ["Try a check", "/checker"],
-                ["Back to top", "#main-content"],
-              ],
-            },
-          ].map((group) => (
-            <nav key={group.title} aria-label={"Footer " + group.title}>
-              <h2 className="mb-6 text-xs font-medium text-canvas">
-                {group.title}
-              </h2>
-              {group.links.map(([label, href]) => (
+              ].map(([label, href]) => (
                 <Link
                   key={label}
                   href={href}
-                  className="mb-3 block text-sm text-[#b0aea5] no-underline hover:text-canvas hover:underline"
+                  className="inline-flex min-h-11 items-center text-sm text-[#b0aea5] no-underline hover:text-canvas hover:underline"
                 >
                   {label}
                 </Link>
               ))}
             </nav>
-          ))}
+          </div>
         </div>
       </footer>
     </div>

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "react-aria-components";
-import { ArrowRight, Pause, Play } from "@phosphor-icons/react";
+import { ArrowUpRight, Pause, Play } from "@phosphor-icons/react";
 import GhostFibers from "./ghost-fibers";
 export function ProductBanner() {
   const [paused, setPaused] = useState(false);
@@ -10,51 +10,57 @@ export function ProductBanner() {
     <section
       aria-labelledby="product-title"
       data-testid="product-banner"
-      className="relative isolate flex min-h-[493px] flex-col items-center justify-center overflow-hidden rounded-3xl bg-[#120f17] px-5 py-16 text-center text-canvas lg:min-h-[634px] lg:py-36"
+      className="relative isolate flex min-h-[450px] flex-col justify-between overflow-hidden rounded-[100px_16px_16px_16px] bg-[#120f17] p-7 text-canvas sm:p-10 lg:min-h-[560px]"
     >
       <div className="absolute inset-0 -z-20">
         <GhostFibers
-          lineColor="#70649e"
-          glowColor="#3437a0"
+          lineColor="#a899bd"
+          glowColor="#70649e"
           dpr={1}
           fps={30}
           paused={paused}
         />
       </div>
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-black/25" />
-      <p className="mb-6 text-xs tracking-[.16em] uppercase text-white/75">
-        Clear terms. Shared evidence.
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-t from-[#120f17]/95 via-[#120f17]/10 to-[#120f17]/20" />
+      <p className="m-0 self-end font-mono text-[10px] tracking-[.15em] uppercase text-white/75">
+        Scope / evidence / people
       </p>
-      <h2
-        id="product-title"
-        className="mb-0 font-serif text-[clamp(3.5rem,7vw,6.5rem)] leading-[1.05] font-normal tracking-[-.035em] text-canvas"
-      >
-        Pactra <span className="block sm:inline">Workspace</span>
-      </h2>
-      <p className="my-8 max-w-[640px] font-serif text-xl leading-[1.4] lg:text-2xl">
-        Agree on the work. Review what matters.
-        <br />
-        Keep the final decision human.
-      </p>
-      <Link
-        href="/tasks"
-        className="group inline-flex min-h-11 items-center gap-3 rounded-lg bg-canvas px-5 text-sm text-ink no-underline transition-colors hover:bg-[#e6dfd8]"
-      >
-        Explore Pactra
-        <ArrowRight
-          size={16}
-          className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none"
-        />
-      </Link>
-      <Button
-        aria-label={
-          paused ? "Play background animation" : "Pause background animation"
-        }
-        onPress={() => setPaused(!paused)}
-        className="absolute right-4 bottom-4 flex size-11 items-center justify-center rounded-full border border-white/30 bg-black/20 p-0 text-white hover:bg-black/50"
-      >
-        {paused ? <Play size={16} /> : <Pause size={16} />}
-      </Button>
+      <div className="mt-28">
+        <p className="mb-4 font-mono text-[10px] tracking-[.12em] uppercase text-white/65">
+          Different perspectives. Shared terms.
+        </p>
+        <h2
+          id="product-title"
+          className="mb-6 max-w-sm font-serif text-[clamp(2.5rem,4vw,3.75rem)] leading-[1.04] font-normal tracking-tight text-canvas"
+        >
+          Find the
+          <br />
+          <span className="italic">common thread.</span>
+        </h2>
+        <div className="flex items-center justify-between gap-5 border-t border-white/30 pt-5">
+          <Link
+            href="/tasks"
+            className="group inline-flex min-h-11 items-center gap-4 text-sm text-canvas no-underline hover:underline"
+          >
+            Explore Pactra
+            <ArrowUpRight
+              size={18}
+              className="transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none"
+            />
+          </Link>
+          <Button
+            aria-label={
+              paused
+                ? "Play background animation"
+                : "Pause background animation"
+            }
+            onPress={() => setPaused(!paused)}
+            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/30 bg-black/20 p-0 text-white hover:bg-black/50"
+          >
+            {paused ? <Play size={16} /> : <Pause size={16} />}
+          </Button>
+        </div>
+      </div>
     </section>
   );
 }
