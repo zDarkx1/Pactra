@@ -6,6 +6,10 @@ No funds should be accepted until these decisions have an owner-approved answer 
 
 The Go workspace now implements designated-worker invitations and immutable manifest acceptance, storing agreed per-deliverable amounts/revision limits/review windows. It ends at `accepted_unfunded`; no funding, revision execution, payout, dispute or timeout-claim behavior is implemented. The historical approval bullets below describe policy and may say 'not implemented' for the financial workflow even where agreement recording now exists. Technical defaults are documented in PERSISTENT_BACKEND.md.
 
+## On-chain escrow implementation — 2026-09-24
+
+`contracts/src/PactraEscrow.sol` exists as source only, implementing the approved bullets above: designated-worker acceptance before funding, exact upfront funding, immutable per-deliverable allocations with single-use manifest binding, revision limits, per-round review windows with worker-initiated timeout claims, disputes blocking timeout payout, and primary-plus-backup arbiter windows (48h each, permissionless handover revoking the primary's authority). Native BOT only, pull-based withdrawals, no admin functions. Explicitly not implemented because the corresponding decisions remain unresolved: post-funding cancellation, a no-submission buyer exit, a backup-deadline-missed exit, fees, reassignment and dependency-linked deliverables — affected funds stay locked rather than assuming policy. The contract is not deployed, not independently reviewed, and green tests do not authorize deployment. No on-chain activity is claimed.
+
 ## Agreed product decisions
 
 - **Worker assignment:** Buyer invites one designated worker by wallet address. The invited worker reviews the scope and accepts before funding. Public open-claim tasks are outside the MVP. Approved by the owner in chat; not yet implemented.

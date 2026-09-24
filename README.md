@@ -25,7 +25,7 @@ This repository is a **team development foundation**, not a finished escrow mark
 
 The non-contract workspace branch adds versioned private JSON submissions, persisted checker metadata, buyer review/revision, a dispute evidence flag, creation idempotency and pagination. See [current roadmap](docs/ROADMAP.md), [delivery API](docs/DELIVERY_API.md), [AI budgets](docs/AI_BUDGETS.md) and [deployment gates](docs/DEPLOYMENT.md). These source features are not a claim that every public API is enabled.
 
-**Not implemented:** on-chain agreement commitments, funded delivery enforcement, smart contracts, BOT transfers, arbiter dispute resolution, timeout payouts or completed competition submission. Work review is explicitly voluntary and unfunded. A successful check is NOT acceptance or payment authorization. No fake AI review or wallet transactions are shown.
+**Not implemented:** contract deployment and any on-chain activity (escrow source exists in contracts/src, undeployed and independently unreviewed), funded delivery enforcement, BOT transfers, arbiter dispute resolution beyond the tested contract logic, timeout payouts on a live network, or a completed competition submission. Work review is explicitly voluntary and unfunded. A successful check is NOT acceptance or payment authorization. No fake AI review or wallet transactions are shown.
 
 ## Quick start
 
@@ -57,7 +57,7 @@ Open http://127.0.0.1:3000. Click **Run checks** with the supplied example, then
 ```text
 frontend/       Next.js workbench and bounded backend-for-frontend route
 backend/        Go HTTP API and deterministic checker
-contracts/      Pinned Foundry toolchain, tests and deployment records (no deployed escrow)
+contracts/      Pinned Foundry toolchain, escrow source, tests and deployment records (undeployed)
 docs/           Product, architecture, frontend/backend and delivery guides
 examples/       Safe example inputs; not real customer documents
 scripts/        Documentation checks
