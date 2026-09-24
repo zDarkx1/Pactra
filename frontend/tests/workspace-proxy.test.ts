@@ -132,7 +132,8 @@ test('logout calls Go and clears local cookies only after revocation response', 
 test('public production AI stays disabled at the route, not only the button', () => configured(async () => {
   Object.assign(process.env, { NODE_ENV: 'production' });
   globalThis.fetch = async () => { throw new Error('must not call paid provider'); };
-  const result = await review(new Request('https://pactra.test/api/review', { method: 'POST', body: '{}' }));
+  delete process.env.PACTRA_PUBLIC_AI_ENABLED;
+  const result = await review(new Request('https://pactra.test/api/review', { method: 'POST', headers: {Origin:'https://pactra.test', 'Content-Type':'application/json'}, body: '{}' }));
   assert.equal(result.status, 503);
 }));
 test('task parser rejects invented funded status and malformed manifests', () => {

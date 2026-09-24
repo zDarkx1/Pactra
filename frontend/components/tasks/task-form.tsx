@@ -5,8 +5,7 @@ import { Icon } from '../ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useWorkspace } from '../workspace-provider';
-import { workspaceRequest } from '../../lib/workspace-client';
-import type { Task } from '../../lib/workspace-types';
+import { createTaskAttempt } from '../../lib/workspace-client';
 import { deadlineToUtc, isTaskAddress, newDeliverable, newTaskDraft, validateTaskDraft, type DeliverableDraft, type TaskDraft, type TaskFormErrors, type TaskValidation } from '../../lib/task-form';
 import { ManifestDetails } from './manifest-details';
 import { TaskButton, SessionExpired, TaskSession, taskErrorMessage, taskErrorStatus } from './task-shared';
@@ -34,13 +33,14 @@ function TaskForm() {
   const errorSummary = useRef<HTMLDivElement>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
   const mutation = useRef<AbortController | null>(null);
+  const attempt = useRef<ReturnType<typeof createTaskAttempt> | null>(null);
   const focusNext = useRef<string | null>(null);
   const sequence = useRef(1);
   const allowed = [...new Set(config.arbiters.filter(isTaskAddress).map(value => value.toLowerCase()))];
   const available = allowed.filter(value => value !== address?.toLowerCase() && value !== draft.worker.toLowerCase());
   const blocked = !config.chain || allowed.length < 2;
 
-  useLayoutEffect(() => () => { mutation.current?.abort(); }, []);
+  useLayoutEffect(() => () => { mutation.current?.abort(); attempt.current?.dispose(); }, []);
   useEffect(() => { if (Object.keys(errors).length || serverError || uncertain) errorSummary.current?.focus(); }, [errors, serverError, uncertain]);
   useEffect(() => { if (review) reviewHeading.current?.focus(); }, [review]);
   useLayoutEffect(() => {
@@ -48,6 +48,7 @@ function TaskForm() {
   }, [draft.deliverables.length, review]);
 
   function updateField(field: Exclude<keyof TaskDraft, 'deliverables'>, value: string) {
+    if (pending || uncertain || mutation.current) return;
     setDraft(current => ({ ...current, [field]: value }));
     setReview(null);
     setServerError('');
@@ -55,6 +56,7 @@ function TaskForm() {
   }
 
   function updateDeliverable(index: number, field: keyof DeliverableDraft, value: string) {
+    if (pending || uncertain || mutation.current) return;
     setDraft(current => ({ ...current, deliverables: current.deliverables.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item) }));
     setReview(null);
     setErrors(current => { const next = { ...current }; delete next['deliverables.' + index + '.' + field]; delete next.deliverables; delete next._form; return next; });
@@ -76,29 +78,29 @@ function TaskForm() {
   }
 
   async function createTask() {
-    if (!review || blocked || pending || mutation.current || uncertain || !address) return;
-    const checked = validateTaskDraft(draft, address, allowed);
-    if (!checked.ok) { setReview(null); setErrors(checked.errors); return; }
-    if (checked.body !== review.body) { setReview(checked); setServerError('Terms changed. Review this updated agreement before creating it.'); return; }
+    if (!review || blocked || pending || mutation.current || !address) return;
+    if (!attempt.current) {
+      const checked = validateTaskDraft(draft, address, allowed);
+      if (!checked.ok) { setReview(null); setErrors(checked.errors); return; }
+      if (checked.body !== review.body) { setReview(checked); setServerError('Terms changed. Review this updated agreement before creating it.'); return; }
+      attempt.current = createTaskAttempt(checked.body);
+    }
     const controller = new AbortController();
     mutation.current = controller;
     setPending(true);
     setServerError('');
     try {
-      const task = await workspaceRequest<Task>('/tasks', {
-        method: 'POST', body: checked.body,
-        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
-      });
+      const task = await attempt.current.send(controller.signal);
       if (controller.signal.aborted) return;
       router.replace('/tasks/' + task.id);
     } catch (cause) {
       if (controller.signal.aborted) return;
       const status = taskErrorStatus(cause);
-      if (status === 401) { setDraft(newTaskDraft()); setReview(null); setExpired(true); }
-      else if (status === 0 || status >= 500 || status === 408 || status === 409) {
+      if (status === 401 || attempt.current.state === 'disposed') { attempt.current.dispose(); attempt.current = null; setDraft(newTaskDraft()); setReview(null); setExpired(true); }
+      else if (attempt.current.state === 'uncertain') {
         setUncertain(true);
-        setServerError('The request may have reached the server. This task was not retried. Check your task list before starting another invitation.');
-      } else setServerError(taskErrorMessage(cause));
+        setServerError('The request may have reached the server. Retry this same invitation to resolve it; the exact payload and idempotency key will be reused. Editing is locked. Nothing is retried automatically.');
+      } else { attempt.current.dispose(); attempt.current = null; setUncertain(false); setServerError(taskErrorMessage(cause)); }
       mutation.current = null;
       setPending(false);
     }
@@ -114,13 +116,13 @@ function TaskForm() {
     <div ref={errorSummary} tabIndex={-1} role={Object.keys(errors).length || serverError ? 'alert' : undefined} className={Object.keys(errors).length || serverError ? styles.errorBox : styles.srOnly}>
       {Object.keys(errors).length > 0 && <><h2>Check these fields</h2><ul>{Object.entries(errors).map(([name, message]) => <li key={name}>{name === '_form' ? message : <a href={'#' + name} onClick={event => { event.preventDefault(); document.getElementById(name)?.focus(); }}>{message}</a>}</li>)}</ul></>}
       {serverError && <p>{serverError}</p>}
-      {uncertain && <Link prefetch={false} className={styles.textLink} href="/tasks">Check the task list · do not resend</Link>}
+      {uncertain && <p>Keep this page open to retain the retry key. Leaving clears it; check your task list before creating another invitation.</p>}
     </div>
     {review && config.chain && address ? <div className={styles.stack}>
-      <div className={styles.sectionHeading}><h2 ref={reviewHeading} tabIndex={-1}>Review before creating</h2><span className={styles.hint}>Not yet sent</span></div>
+      <div className={styles.sectionHeading}><h2 ref={reviewHeading} tabIndex={-1}>Review before creating</h2><span className={styles.hint}>{uncertain ? 'Creation not yet confirmed' : pending ? 'Sending' : 'Not yet sent'}</span></div>
       <ManifestDetails terms={review.input} buyer={address.toLowerCase()} chainId={config.chain.id} total={review.total} />
       <p className={styles.notice}>The server assigns the task ID, invitation expiry, and terms fingerprint after creation. The worker must separately accept that exact fingerprint.</p>
-      <div className={styles.actions}><TaskButton type="button" className={styles.secondary} disabled={pending || uncertain} onClick={() => { focusNext.current = 'title'; setReview(null); setServerError(''); }}>Back to edit</TaskButton><TaskButton type="button" className={styles.primary} disabled={pending || uncertain || blocked} onClick={() => void createTask()}>{pending ? 'Creating invitation…' : 'Create invitation'}</TaskButton><span className={styles.hint} role="status">{pending ? 'Waiting for the server. Please do not submit again.' : uncertain ? 'Creation locked until you check the task list.' : 'No funds will move.'}</span></div>
+      <div className={styles.actions}><TaskButton type="button" className={styles.secondary} disabled={pending || uncertain} onClick={() => { if (mutation.current || uncertain) return; focusNext.current = 'title'; setReview(null); setServerError(''); }}>Back to edit</TaskButton><TaskButton type="button" className={styles.primary} disabled={pending || blocked} onClick={() => void createTask()}>{pending ? 'Creating invitation…' : uncertain ? 'Retry same invitation' : 'Create invitation'}</TaskButton><span className={styles.hint} role="status">{pending ? 'Waiting for the server. Please do not submit again.' : uncertain ? 'Same key and terms retained in memory. Edits remain locked.' : 'No funds will move.'}</span></div>
     </div> : <form className={styles.form} onSubmit={reviewTerms} noValidate autoComplete="off">
       <fieldset disabled={blocked || pending || uncertain} className={styles.formBody}><legend className={styles.srOnly}>New task terms</legend>
         <section className={styles.section} aria-labelledby="work-heading"><h2 id="work-heading">The work</h2><div className={styles.stack}>

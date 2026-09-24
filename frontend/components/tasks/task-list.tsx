@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useWorkspace } from '../workspace-provider';
 import { Icon } from '../ui';
-import type { Task } from '../../lib/workspace-types';
+import { createTaskPager, type TaskPagerSnapshot } from '../../lib/workspace-client';
 import { taskMatchesSearch } from '../../lib/task-list';
-import { TaskButton, SessionExpired, TaskLoading, TaskSession, TaskStatusBadge, TaskTime, taskDisplayStatus, taskErrorMessage, taskErrorStatus, useTaskClock, useTaskResource } from './task-shared';
+import { TaskButton, SessionExpired, TaskLoading, TaskSession, TaskStatusBadge, TaskTime, taskDisplayStatus, taskErrorMessage, taskErrorStatus, useTaskClock } from './task-shared';
 import shared from './task-styles';
 import styles from './task-list-styles';
 
@@ -16,7 +16,15 @@ export default function TaskListView() {
 
 function TaskList() {
   const { address } = useWorkspace();
-  const { data, error, loading, reload } = useTaskResource<{ tasks: Task[] }>('/tasks');
+  const pager = useRef<ReturnType<typeof createTaskPager> | null>(null);
+  const [{ data, error, loading, loadingMore }, setSnapshot] = useState<TaskPagerSnapshot>({ data: null, error: null, loading: true, loadingMore: false });
+  useLayoutEffect(() => {
+    const current = createTaskPager(() => setSnapshot(current.snapshot));
+    pager.current = current;
+    void current.reload();
+    return () => { current.dispose(); pager.current = null; };
+  }, []);
+  const reload = () => pager.current?.reload();
   const [role, setRole] = useState('all');
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
@@ -48,13 +56,12 @@ function TaskList() {
       <TaskButton type="button" className={[shared.secondary, styles.refresh].join(' ')} disabled={loading} aria-busy={loading} onClick={() => void reload()}><Icon name="refresh" />{loading && data ? 'Refreshing…' : 'Refresh list'}</TaskButton>
     </div>
     <div className={styles.scope}>
-      <p id="task-list-scope">Newest 50 tasks only. Search and filters apply to loaded tasks, not your full history. No pagination yet.</p>
-      {tasks.length >= 50 && <p className={styles.limit}><Icon name="info" />50-task limit reached. Older tasks may not appear.</p>}
+      <p id="task-list-scope">Search and filters apply to loaded tasks. Load more to include older agreements; refreshing starts again with the newest page.</p>
     </div>
-    {error != null && <div className={[shared.errorBox, styles.error].join(' ')} role="alert"><strong>Could not load tasks</strong><p>{taskErrorMessage(error)}</p>{data && <p>The list shown is from the last successful read.</p>}<TaskButton type="button" className={shared.secondary} disabled={loading} onClick={() => void reload()}>Try reading again</TaskButton></div>}
+    {error != null && <div className={[shared.errorBox, styles.error].join(' ')} role="alert"><strong>Could not load tasks</strong><p>{taskErrorMessage(error)}</p>{data && <p>The list shown is from the last successful read.</p>}<TaskButton type="button" className={shared.secondary} disabled={loading} onClick={() => void reload()}>Refresh from first page</TaskButton></div>}
     {loading && !data ? <TaskLoading /> : data && <section aria-label="Loaded tasks" aria-busy={loading}>
       <div className={styles.results}>
-        <p role="status" aria-live="polite">{loading ? 'Refreshing tasks…' : visible.length + ' shown of ' + tasks.length + ' loaded'}</p>
+        <p role="status" aria-live="polite">{loading ? loadingMore ? 'Loading older tasks…' : 'Refreshing tasks…' : visible.length + ' shown of ' + tasks.length + ' loaded'}</p>
         {hasFilters && visible.length > 0 && <TaskButton type="button" className={styles.clear} onClick={clearFilters}>Clear filters</TaskButton>}
       </div>
       {visible.length === 0 ? <div className={styles.empty}>
@@ -80,6 +87,7 @@ function TaskList() {
           </li>;
         })}</ul>
       </>}
+      {data.next_cursor && <TaskButton type="button" className={shared.secondary} disabled={loading} aria-busy={loadingMore} onClick={() => void pager.current?.loadMore()}>{loadingMore ? 'Loading more…' : 'Load more agreements'}</TaskButton>}
     </section>}
     <p className={styles.footnote}><Icon name="clock" /><span>Expiry labels use your device clock. The server decides whether an invitation can still be accepted. Acceptance does not fund a task.</span></p>
   </div>;

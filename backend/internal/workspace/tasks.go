@@ -1,13 +1,18 @@
 package workspace
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"math/big"
 	"net/http"
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -126,13 +131,92 @@ func canonicalJSON(v any) ([]byte, error) {
 	}
 	return json.Marshal(obj)
 }
+
+// Idempotency keys accept the UUID text layout (any version), case-insensitively.
+// Unlike generated task IDs, keys need not be UUIDv4. Whitespace is not repaired.
+var idempotencyUUIDRE = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+func taskRequestHash(in TaskInput) ([32]byte, error) {
+	// Normalize only request values, never server-generated time/policy fields.
+	// Preserve malformed values for hashing too: an existing key with a different
+	// decoded payload conflicts; only a new creation runs manifest validation.
+	// This deliberately does not enforce the moving delivery deadline window.
+	for _, p := range []*string{&in.Worker, &in.PrimaryArbiter, &in.BackupArbiter} {
+		if a, e := address(*p); e == nil {
+			*p = a
+		}
+	}
+	in.DeliveryDeadline = in.DeliveryDeadline.UTC()
+	b, e := canonicalJSON(in)
+	return sha256.Sum256(b), e
+}
+
+func writeTaskResponse(w http.ResponseWriter, status int, body []byte) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = w.Write(body)
+}
+
 func (s *server) create(w http.ResponseWriter, r *http.Request, a string) {
-	if len(s.arbiters) == 0 {
-		fail(w, 503)
-		return
+	keys, keyed := r.Header[http.CanonicalHeaderKey("Idempotency-Key")]
+	key := ""
+	if keyed {
+		if len(keys) != 1 || !idempotencyUUIDRE.MatchString(keys[0]) {
+			fail(w, 400)
+			return
+		}
+		key = strings.ToLower(keys[0])
 	}
 	var in TaskInput
 	if !decode(w, r, &in) {
+		return
+	}
+	var requestHash [32]byte
+	var e error
+	if keyed {
+		requestHash, e = taskRequestHash(in)
+		if e != nil {
+			fail(w, 400)
+			return
+		}
+	}
+	tx, e := s.pool.Begin(r.Context())
+	if e != nil {
+		fail(w, 503)
+		return
+	}
+	defer tx.Rollback(r.Context())
+	if keyed {
+		// Serialize across connections/processes until commit, not just in memory.
+		// A lock-hash collision only delays unrelated keys; the full PK is checked.
+		lockHash := sha256.Sum256([]byte("pactra.task-create\x00" + a + "\x00" + key))
+		if _, e = tx.Exec(r.Context(), "SELECT pg_advisory_xact_lock($1)", int64(binary.BigEndian.Uint64(lockHash[:8]))); e != nil {
+			fail(w, 503)
+			return
+		}
+		var storedHash, body []byte
+		var status int
+		e = tx.QueryRow(r.Context(), "SELECT request_hash,response_status,response_body FROM pactra.task_idempotency WHERE buyer=$1 AND key=$2", a, key).Scan(&storedHash, &status, &body)
+		if e == nil {
+			if !bytes.Equal(storedHash, requestHash[:]) {
+				fail(w, 409)
+				return
+			}
+			if tx.Commit(r.Context()) != nil {
+				fail(w, 503)
+				return
+			}
+			writeTaskResponse(w, status, body)
+			return
+		}
+		if !errors.Is(e, pgx.ErrNoRows) {
+			fail(w, 503)
+			return
+		}
+	}
+	// Recovery must precede both current policy and time-dependent validation.
+	if len(s.arbiters) == 0 {
+		fail(w, 503)
 		return
 	}
 	now := time.Now().UTC().Truncate(time.Microsecond)
@@ -152,12 +236,6 @@ func (s *server) create(w http.ResponseWriter, r *http.Request, a string) {
 		fail(w, 503)
 		return
 	}
-	tx, e := s.pool.Begin(r.Context())
-	if e != nil {
-		fail(w, 503)
-		return
-	}
-	defer tx.Rollback(r.Context())
 	for _, p := range []string{m.Worker, m.PrimaryArbiter, m.BackupArbiter} {
 		if _, e = tx.Exec(r.Context(), "INSERT INTO pactra.accounts(address) VALUES($1) ON CONFLICT DO NOTHING", p); e != nil {
 			fail(w, 503)
@@ -170,11 +248,24 @@ func (s *server) create(w http.ResponseWriter, r *http.Request, a string) {
 		fail(w, 503)
 		return
 	}
+	body, e := json.Marshal(task)
+	if e != nil {
+		fail(w, 503)
+		return
+	}
+	body = append(body, '\n') // Preserve the existing Encoder response bytes.
+	if keyed {
+		_, e = tx.Exec(r.Context(), "INSERT INTO pactra.task_idempotency(buyer,key,request_hash,task_id,response_status,response_body) VALUES($1,$2,$3,$4,$5,$6)", a, key, requestHash[:], id, http.StatusCreated, body)
+		if e != nil {
+			fail(w, 503)
+			return
+		}
+	}
 	if tx.Commit(r.Context()) != nil {
 		fail(w, 503)
 		return
 	}
-	respond(w, 201, task)
+	writeTaskResponse(w, http.StatusCreated, body)
 }
 
 const taskColumns = "id::text,status,manifest_json,manifest_hash,created_at,invite_expires_at"
@@ -204,8 +295,62 @@ func (s *server) get(w http.ResponseWriter, r *http.Request, a string) {
 	}
 	respond(w, 200, t)
 }
+func taskCursor(t Task) string {
+	return base64.RawURLEncoding.EncodeToString([]byte("1\n" + t.CreatedAt.UTC().Format(time.RFC3339Nano) + "\n" + t.ID))
+}
+
+func parseTaskPage(r *http.Request) (int, *Task, error) {
+	bad := errors.New("invalid task pagination")
+	q, e := url.ParseQuery(r.URL.RawQuery)
+	if e != nil {
+		return 0, nil, bad
+	}
+	limit := 50
+	if values, ok := q["limit"]; ok {
+		if len(values) != 1 {
+			return 0, nil, bad
+		}
+		limit, e = strconv.Atoi(values[0])
+		if e != nil || limit < 1 || limit > 50 || strconv.Itoa(limit) != values[0] {
+			return 0, nil, bad
+		}
+	}
+	var after *Task
+	if values, ok := q["cursor"]; ok {
+		if len(values) != 1 || len(values[0]) == 0 || len(values[0]) > 128 {
+			return 0, nil, bad
+		}
+		b, e := base64.RawURLEncoding.Strict().DecodeString(values[0])
+		parts := strings.Split(string(b), "\n")
+		if e != nil || len(parts) != 3 || parts[0] != "1" || !uuidRE.MatchString(parts[2]) {
+			return 0, nil, bad
+		}
+		stamp, e := time.Parse(time.RFC3339Nano, parts[1])
+		if e != nil || stamp.Year() < 1 || stamp.Nanosecond()%1000 != 0 {
+			return 0, nil, bad
+		}
+		after = &Task{ID: parts[2], CreatedAt: stamp}
+		if taskCursor(*after) != values[0] {
+			return 0, nil, bad
+		}
+	}
+	return limit, after, nil
+}
+
 func (s *server) list(w http.ResponseWriter, r *http.Request, a string) {
-	rows, e := s.pool.Query(r.Context(), "SELECT "+taskColumns+" FROM pactra.tasks WHERE buyer=$1 OR worker=$1 ORDER BY created_at DESC,id DESC LIMIT 50", a)
+	limit, after, e := parseTaskPage(r)
+	if e != nil {
+		fail(w, 400)
+		return
+	}
+	query := "SELECT " + taskColumns + " FROM pactra.tasks WHERE (buyer=$1 OR worker=$1)"
+	args := []any{a, limit + 1}
+	if after != nil {
+		query += " AND (created_at,id)<($3::timestamptz,$4::uuid)"
+		args = append(args, after.CreatedAt, after.ID)
+	}
+	query += " ORDER BY created_at DESC,id DESC LIMIT $2"
+	rows, e := s.pool.Query(r.Context(), query, args...)
 	if e != nil {
 		fail(w, 503)
 		return
@@ -224,7 +369,13 @@ func (s *server) list(w http.ResponseWriter, r *http.Request, a string) {
 		fail(w, 503)
 		return
 	}
-	respond(w, 200, map[string]any{"tasks": tasks})
+	var next *string
+	if len(tasks) > limit {
+		tasks = tasks[:limit]
+		cursor := taskCursor(tasks[len(tasks)-1])
+		next = &cursor
+	}
+	respond(w, 200, map[string]any{"tasks": tasks, "next_cursor": next})
 }
 func (s *server) accept(w http.ResponseWriter, r *http.Request, a string) {
 	var in struct {

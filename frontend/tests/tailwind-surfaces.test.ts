@@ -56,12 +56,12 @@ test('checker initially renders literal placeholders, labelled editors and no cl
   assert.doesNotMatch(html, /✓ Checks passed/);
 });
 
-test('AI review remains consent-gated and advisory', () => {
+test('signed-out AI review requires a session and stays advisory', () => {
   const html = renderToStaticMarkup(React.createElement(load('app/semantic-review.tsx').default, { body: null }));
   assert.match(html, /AI meaning review/);
-  assert.match(html, /disabled=""/);
-  assert.match(html, /AI assesses meaning, not acceptance or payment/);
-  assert.match(html, /No AI assessment available/);
+  assert.match(html, /Sign-in required/);
+  assert.match(html, /Never accepts work or authorizes payment/);
+  assert.doesNotMatch(html, /Review meaning with AI/);
 });
 
 test('landing sample renders missing placeholder as text without inventing a response', () => {
@@ -106,7 +106,7 @@ test('request cancellation, consent, pending and native constraint wiring stay i
   assert.match(checker, /request\.cancel\(\)/);
   assert.match(checker, /pending\.isCurrent\(\)/);
   assert.match(review, /!consent \|\| busy/);
-  assert.match(review, /credentials: 'omit', cache: 'no-store'/);
+  assert.match(review, /workspaceRequest\('\/review'/); // Authenticated transport now owns same-origin credentials/no-store.
   assert.match(form, /fieldset disabled=\{blocked \|\| pending \|\| uncertain\}/);
   assert.match(form, /type="datetime-local" step="60"/);
   assert.match(form, /noValidate autoComplete="off"/);

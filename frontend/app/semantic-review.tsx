@@ -5,10 +5,13 @@ import type { MouseEvent } from 'react';
 import { createRequestGuard, isReviewResponse, reviewInputError } from './checker/model';
 import type { ReviewResponse } from './checker/model';
 import styles from './checker/checker-styles';
+import { useWorkspace } from '../components/workspace-provider';
+import { workspaceRequest } from '../lib/workspace-client';
 
 export default function SemanticReview({ body }: { body: string | null }) {
-  if (process.env.NODE_ENV === 'production') return <section className={styles.aiPanel} aria-labelledby="ai-review-title"><div className={styles.sectionHeading}><div><h2 id="ai-review-title">AI meaning review</h2><p>Optional, advisory, and separate from deterministic checks.</p></div><span className={styles.tag}>Disabled</span></div><p className={styles.aiBoundary}>AI review is disabled in production. It stays local-only until authenticated access and durable per-user spend limits are in place. Deterministic checks remain available.</p></section>;
-  return <ReviewSession key={body} body={body} />;
+  const {status,address,sessionKey}=useWorkspace();
+  if(status!=='signedIn')return <section className={styles.aiPanel} aria-labelledby="ai-review-title"><div className={styles.sectionHeading}><div><h2 id="ai-review-title">AI meaning review</h2><p>Advisory only. Never accepts work or authorizes payment.</p></div><span className={styles.tag}>Sign-in required</span></div><p className={styles.aiBoundary}>Connect your wallet and sign in to request an AI review. Availability is controlled by the server and daily request budgets. Deterministic checks work without a wallet.</p></section>;
+  return <ReviewSession key={address+':'+sessionKey+':'+body} body={body} />;
 }
 
 function ReviewSession({ body }: { body: string | null }) {
@@ -37,28 +40,14 @@ function ReviewSession({ body }: { body: string | null }) {
   }
 
   async function run(event: MouseEvent<HTMLButtonElement>) {
-    if (!body || inputError || !consent || busy || process.env.NODE_ENV === 'production') return;
+    if (!body || inputError || !consent || busy) return;
     setMotion(event.detail === 0 ? 'instant' : 'pointer');
     const pending = request.begin();
     setBusy(true);
     setError('');
     setResult(null);
     try {
-      const response = await fetch('/api/review', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body,
-        signal: pending.signal, credentials: 'omit', cache: 'no-store',
-      });
-      if (!response.ok) {
-        const messages: Record<number, string> = {
-          400: 'The review input was rejected. Check duplicate keys and field limits.',
-          413: 'AI review accepts up to 20 keys and 16 KiB.',
-          429: 'AI review is busy. Wait before trying again.',
-          503: 'AI review is not configured. Deterministic checks still work.',
-          504: 'AI review timed out. No assessment is available.',
-        };
-        throw new Error(messages[response.status] || 'AI review is unavailable. Deterministic checks still work.');
-      }
-      const result: unknown = await response.json().catch(() => null);
+      const result: unknown = await workspaceRequest('/review', {method:'POST',body,signal:pending.signal});
       if (!isReviewResponse(result, body)) throw new Error('AI returned an invalid review. No assessment is available.');
       if (pending.isCurrent()) setResult(result);
     } catch (cause) {
@@ -69,7 +58,7 @@ function ReviewSession({ body }: { body: string | null }) {
   }
 
   return <section className={styles.aiPanel} aria-labelledby="ai-review-title">
-    <div className={styles.sectionHeading}><div><h2 id="ai-review-title">AI meaning review</h2><p>Azure Foundry · Optional advisory analysis</p></div><span className={styles.tag}>Local only</span></div>
+    <div className={styles.sectionHeading}><div><h2 id="ai-review-title">AI meaning review</h2><p>Azure Foundry · Optional advisory analysis</p></div><span className={styles.tag}>Authenticated · budgeted</span></div>
     <div className={styles.aiBody}>
       <p className={styles.aiBoundary}>AI assesses meaning, not acceptance or payment. Its findings never change the deterministic report. Up to 20 keys per document and 16 KiB.</p>
       <label className={styles.checkbox}><input type="checkbox" checked={consent} disabled={Boolean(inputError)} onChange={event => { clearReview(); setConsent(event.target.checked); }} /><span>Send these source and submission texts to the configured Azure AI provider.<small>Do not include private or sensitive content. Editing inputs clears consent and review.</small></span></label>

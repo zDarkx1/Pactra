@@ -2,6 +2,7 @@ import { parseSiweMessage } from 'viem/siwe';
 import { BodyTooLarge, readBoundedBody } from './bounded-body.ts';
 import { appOrigin, getPublicWorkspaceConfig } from './workspace-config.ts';
 import { parseTask, uuidPattern, walletAddressPattern } from './workspace-types.ts';
+import { parseAdvisoryReview, parseTaskPage, workspaceQuery, workspaceRoute } from './workspace-path.ts';
 
 const sessionCookie = 'pactra_session';
 const challengeCookie = 'pactra_challenge';
@@ -28,18 +29,21 @@ function failure(status: number, message?: string) {
   const response = json({ error: { code: 'WORKSPACE_' + status, message: message || messages[status] || messages[502] } }, status);
   return response;
 }
-async function upstream(path: string, method: string, token: string, body?: string) {
-  const base = new URL(process.env.GO_API_URL || 'http://127.0.0.1:8080');
+async function upstream(path: string, method: string, token: string, body?: string, idempotencyKey?: string) {
+  const rawOrigin = process.env.GO_API_URL || 'http://127.0.0.1:8080';
+  const base = new URL(rawOrigin);
+  const numericLoopback = /^http:\/\/(?:127\.0\.0\.1|\[::1\])(?::[0-9]+)?\/?$/.test(rawOrigin);
   if (!['http:', 'https:'].includes(base.protocol) || base.username || base.password
-    || (process.env.NODE_ENV === 'production' && base.protocol !== 'https:')) throw new Error('Invalid Go origin.');
+    || (process.env.NODE_ENV === 'production' && base.protocol !== 'https:' && !numericLoopback)) throw new Error('Invalid Go origin.');
   const headers = new Headers({ Accept: 'application/json' });
   if (body !== undefined) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', 'Bearer ' + token);
-  return fetch(new URL('/api/v1/' + path, base.origin), { method, headers, body, signal: AbortSignal.timeout(10000), redirect: 'error', cache: 'no-store', credentials: 'omit' });
+  if (idempotencyKey !== undefined) headers.set('Idempotency-Key', idempotencyKey);
+  return fetch(new URL('/api/v1/' + path, base.origin), { method, headers, body, signal: AbortSignal.timeout(path === 'review' ? 35000 : 10000), redirect: 'error', cache: 'no-store', credentials: 'omit' });
 }
-async function data(response: Response): Promise<unknown> {
+async function data(response: Response, limit = 4 * 1024 * 1024): Promise<unknown> {
   if (response.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') throw new Error('Invalid response content type.');
-  return JSON.parse(await readBoundedBody(response.body, 4 * 1024 * 1024));
+  return JSON.parse(await readBoundedBody(response.body, limit));
 }
 function memberAddress(value: unknown) {
   if (!value || typeof value !== 'object' || !('address' in value) || typeof value.address !== 'string' || !walletAddressPattern.test(value.address)) throw new Error('Invalid account.');
@@ -53,16 +57,19 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
   let origin: URL;
   try { origin = appOrigin(); } catch { return json({ error: { code: 'WORKSPACE_CONFIG', message: 'Workspace origin is not configured.' } }, 503); }
   const path = segments.join('/');
-  const isTask = segments[0] === 'tasks';
-  const known = path === 'me' || ['auth/challenge', 'auth/verify', 'auth/logout', 'tasks'].includes(path)
-    || (isTask && uuidPattern.test(segments[1] || '') && (segments.length === 2 || (segments.length === 3 && ['accept', 'cancel'].includes(segments[2]))));
-  if (!known || segments.some(segment => segment.includes('/') || segment.includes('..'))) return failure(404);
+  const route = workspaceRoute('/' + path);
+  if (!route || segments.some(segment => segment.includes('/') || segment.includes('..'))) return failure(404);
   const read = request.method === 'GET';
-  if (!(read ? path === 'me' || (isTask && segments.length <= 2) : request.method === 'POST' && path !== 'me' && !(isTask && segments.length === 2))) {
+  if (!route.methods.includes(request.method)) {
     return json({ error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed.' } }, 405);
   }
   if (request.headers.get('sec-fetch-site') === 'cross-site') return failure(403);
   if (!read && request.headers.get('origin') !== origin.origin) return failure(403);
+  if (route.kind === 'review' && process.env.PACTRA_PUBLIC_AI_ENABLED !== 'true') return failure(503, 'AI review is disabled. Deterministic checks remain available.');
+  let query: string;
+  try { query = workspaceQuery(route, request.method, new URL(request.url).search); } catch { return failure(400); }
+  const idempotencyKey = request.headers.get('idempotency-key');
+  if (idempotencyKey !== null && (path !== 'tasks' || read || !uuidPattern.test(idempotencyKey))) return failure(400);
   const config = getPublicWorkspaceConfig();
   if (!config.enabled || !config.chain) return failure(503, config.reason || undefined);
   let body: string | undefined;
@@ -70,7 +77,7 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
   if (!read) {
     if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return failure(415);
     try {
-      body = await readBoundedBody(request.body, 64 * 1024);
+      body = await readBoundedBody(request.body, (route.kind === 'review' ? 16 : 64) * 1024);
       const parsed: unknown = JSON.parse(body);
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return failure(400);
       input = parsed as Record<string, unknown>;
@@ -130,13 +137,19 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
     const expectedChain = request.headers.get('x-pactra-chain');
     if (!expectedAddress || !walletAddressPattern.test(expectedAddress) || expectedAddress.toLowerCase() !== address || expectedChain !== String(config.chain.id)) return failure(401, 'Wallet and session do not match. Sign in with the selected account.');
     if (path === 'me') return json({ address });
-    const response = await upstream(path, request.method, token, body);
+    const response = await upstream(path + query, request.method, token, body, idempotencyKey ?? undefined);
     if (![200, 201].includes(response.status)) return forwardFailure(response);
-    const value = await data(response);
+    const value = await data(response, route.kind === 'review' ? 256 * 1024 : undefined);
     if (path === 'tasks' && read) {
-      if (!value || typeof value !== 'object' || !('tasks' in value) || !Array.isArray(value.tasks) || value.tasks.length > 50) throw new Error('Invalid task list.');
-      return json({ tasks: value.tasks.map(parseTask) });
+      return json(parseTaskPage(value));
     }
+    if (route.kind === 'delivery') {
+      const { parseDeliveryHistory, parseDeliveryMutation } = await import('./delivery-types.ts');
+      const delivery = read ? parseDeliveryHistory(value) : parseDeliveryMutation(value);
+      if (delivery.task_id.toLowerCase() !== segments[1].toLowerCase() || delivery.deliverable_id !== segments[3]) throw new Error('Mismatched delivery response.');
+      return json(delivery, response.status);
+    }
+    if (route.kind === 'review') return json(parseAdvisoryReview(value, input));
     return json(parseTask(value), response.status);
   } catch (error) {
     return failure(error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name) ? 504 : 502);

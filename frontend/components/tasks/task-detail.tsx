@@ -8,6 +8,7 @@ import { useWorkspace } from '../workspace-provider';
 import { workspaceRequest } from '../../lib/workspace-client';
 import type { Task } from '../../lib/workspace-types';
 import { ManifestDetails } from './manifest-details';
+import { DeliveryReview } from './delivery-review';
 import { TaskButton, CopyValue, SessionExpired, TaskLoading, TaskSession, TaskStatusBadge, TaskTime, taskDisplayStatus, taskErrorMessage, taskErrorStatus, useTaskClock, useTaskResource } from './task-shared';
 import styles from './task-styles';
 
@@ -94,9 +95,10 @@ function TaskDetail({ id }: { id: string }) {
           <p>{isWorker ? 'Read every term and the source above before accepting. Terms cannot be edited after creation.' : 'The worker must accept these exact terms. You can cancel an invitation while its server status is invited, including after expiry.'}</p>
           {isWorker && <TaskButton type="button" className={styles.primary} disabled={pending !== null || loading || error != null || taskDisplayStatus(visibleTask, now) === 'expired'} onClick={event => setConfirmation({ action: 'accept', pointer: event.detail > 0, task: visibleTask })}>{pending === 'accept' ? 'Accepting…' : pending === 'readback' ? 'Checking state…' : 'Accept agreement'}</TaskButton>}
           {isBuyer && <TaskButton type="button" className={styles.danger} disabled={pending !== null || loading || error != null} onClick={event => setConfirmation({ action: 'cancel', pointer: event.detail > 0, task: visibleTask })}>{pending === 'cancel' ? 'Cancelling…' : pending === 'readback' ? 'Checking state…' : 'Cancel invitation'}</TaskButton>}
-        </> : <p>{visibleTask.status === 'accepted_unfunded' ? 'The worker accepted this agreement. No funds have been deposited. Funding and delivery submissions are not available yet.' : 'This invitation has been cancelled. It cannot be reopened or edited.'}</p>}
+        </> : <p>{visibleTask.status === 'accepted_unfunded' ? 'The worker accepted this agreement. No funds have been deposited. Voluntary unfunded work review is available below; funding is not available.' : 'This invitation has been cancelled. It cannot be reopened or edited.'}</p>}
         <p className={styles.hint}>The standalone checker does not submit work or accept an agreement.</p>
       </section>
+      <DeliveryReview task={visibleTask} />
     </> : !loading && !error && !actionError && <div className={styles.empty}><h2>Task not found or unavailable</h2><p>This task may not exist or may not be available to this account.</p></div>}
     {confirmation && <AgreementConfirmation {...confirmation} onDismiss={message => { setConfirmation(null); if (message) setActionError(message); }} onConfirm={() => void act(confirmation.action, confirmation.task)} />}
   </div>;
