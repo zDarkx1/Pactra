@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
+test('sidebar navigation uses RAC links and accessible collapsed tooltips',()=>{const s=readFileSync(new URL('../components/app-shell.tsx',import.meta.url),'utf8');assert.match(s,/<AriaLink/);assert.match(s,/<TooltipTrigger/);assert.match(s,/<Tooltip\b/);assert.match(s,/aria-current/);assert.match(s,/domProps\.onClick/);assert.doesNotMatch(s,/role="menu"/)});

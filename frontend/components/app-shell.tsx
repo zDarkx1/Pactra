@@ -6,7 +6,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type MouseEvent, t
 import { canAnimate, runMotion, type MotionHandle } from "../lib/motion";
 import { WalletControl } from "./wallet-control";
 import { Icon } from "./ui";
-import { Button as AriaButton, DialogTrigger, ModalOverlay, Modal, Dialog } from "react-aria-components";
+import { Button as AriaButton, Link as AriaLink, TooltipTrigger, Tooltip, DialogTrigger, ModalOverlay, Modal, Dialog } from "react-aria-components";
 import { shellStyles as styles } from "./shell-styles";
 
 const destinations = [
@@ -18,9 +18,18 @@ function Wordmark({ compact = false }: { compact?: boolean }) {
   return <Link className={styles.wordmark} href="/" aria-label="Pactra home" title={compact ? "Pactra home" : undefined}>{compact ? <Icon name="home" /> : "Pactra"}</Link>;
 }
 
+function SidebarLink({href,label,icon,compact=false,current=false,className,onNavigate}:{href:string;label:string;icon:"tasks"|"checker"|"plus";compact?:boolean;current?:boolean;className:string;onNavigate?:(href:string)=>void}) {
+  const content=<AriaLink href={href} aria-label={compact?label:undefined} aria-current={current?"page":undefined} className={className}
+    render={domProps=> 'href' in domProps ? <Link {...domProps} href={href} onClick={event=>{
+      // Preserve normal anchors, modified clicks and Next client navigation.
+      domProps.onClick?.(event);
+      if(!event.defaultPrevented&&event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey)onNavigate?.(href);
+    }}/> : <span {...domProps}/> }><Icon name={icon}/><span className={compact?"sr-only":undefined}>{label}</span></AriaLink>;
+  return compact?<TooltipTrigger delay={250} closeDelay={0}>{content}<Tooltip placement="right" offset={12} className="z-100 rounded-lg bg-ink px-3 py-2 text-xs text-canvas shadow-lg">{label}</Tooltip></TooltipTrigger>:content;
+}
 function Navigation({ onNavigate, compact = false }: { onNavigate?: (href: string) => void; compact?: boolean }) {
   const pathname = usePathname();
-  return <nav className={styles.navigation} aria-label="Workspace">{destinations.map(({ href, label, icon }) => <Link key={href} href={href} className={styles.navigationLink} title={compact ? label : undefined} aria-label={compact ? label : undefined} aria-current={pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined} onClick={event => { if (!event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) onNavigate?.(href); }}><Icon name={icon} /><span className={compact ? "sr-only" : undefined}>{label}</span></Link>)}</nav>;
+  return <nav className={styles.navigation} aria-label="Workspace">{destinations.map(({href,label,icon})=><SidebarLink key={href} href={href} label={label} icon={icon} className={styles.navigationLink} compact={compact} current={pathname===href||pathname.startsWith(`${href}/`)} onNavigate={onNavigate}/>)}</nav>;
 }
 
 function MobileNavigation() {
@@ -137,7 +146,7 @@ function MobileNavigation() {
         <Dialog id={dialogId} className={styles.dialog} aria-labelledby={labelId}>
           <div className={styles.drawerHeader}><h2 id={labelId}>Workspace</h2><AriaButton className={styles.iconButton} type="button" aria-label="Close navigation" autoFocus onPress={event => close(event.pointerType !== 'keyboard' && event.pointerType !== 'virtual')}><Icon name="close" /></AriaButton></div>
           <Navigation onNavigate={href => navigate(href)} />
-          <Link href="/tasks/new" className={styles.sidebarCreate} onClick={event => navigate('/tasks/new', event)}><Icon name="plus" />New agreement</Link>
+          <SidebarLink href="/tasks/new" label="New agreement" icon="plus" className={styles.sidebarCreate} onNavigate={href=>navigate(href)}/>
           <div className={styles.drawerFooter}><Link href="/" onClick={event => navigate('/', event)}>Back to Pactra <Icon name="arrow-up-right" /></Link><p>Private agreements. Inspectable evidence.<br />No funds move in this release.</p></div>
         </Dialog>
       </Modal>
@@ -203,7 +212,7 @@ export default function AppShell({ children, title, description }: { children: R
   const detail = pathname === "/tasks/new" ? "New agreement" : pathname.startsWith("/tasks/") ? "Agreement details" : null;
   return <div className={styles.shell} data-sidebar={collapsed ? "collapsed" : "expanded"} data-sidebar-motion={sidebarMotion}>
     <a className={styles.skipLink} href="#main-content">Skip to content</a>
-    <aside id="workspace-sidebar" className={styles.sidebar} aria-label="Workspace sidebar"><div className={styles.sidebarSurface} aria-hidden="true" /><div className={styles.sidebarContent}><Wordmark compact={collapsed} /><div className={styles.workspaceLabel} aria-hidden={collapsed || undefined}>{collapsed ? ' ' : 'Workspace'}</div><Navigation compact={collapsed} /><Link href="/tasks/new" className={styles.sidebarCreate} title={collapsed ? 'New agreement' : undefined} aria-label={collapsed ? 'New agreement' : undefined}><Icon name="plus" /><span className={collapsed ? 'sr-only' : undefined}>New agreement</span></Link><div className={styles.sidebarNote} hidden={collapsed}><span className={styles.releaseLabel}><Icon name="info" />Current release</span><p>Agree on terms and check files. Funding and payouts are not available.</p><Link href="/">About Pactra <Icon name="arrow-up-right" /></Link></div></div></aside>
+    <aside id="workspace-sidebar" className={styles.sidebar} aria-label="Workspace sidebar"><div className={styles.sidebarSurface} aria-hidden="true" /><div className={styles.sidebarContent}><Wordmark compact={collapsed} /><div className={styles.workspaceLabel} aria-hidden={collapsed || undefined}>{collapsed ? ' ' : 'Workspace'}</div><Navigation compact={collapsed} /><SidebarLink href="/tasks/new" label="New agreement" icon="plus" className={styles.sidebarCreate} compact={collapsed}/><div className={styles.sidebarNote} hidden={collapsed}><span className={styles.releaseLabel}><Icon name="info" />Current release</span><p>Agree on terms and check files. Funding and payouts are not available.</p><Link href="/">About Pactra <Icon name="arrow-up-right" /></Link></div></div></aside>
     <div className={styles.workspace} ref={workspaceElement}>
       <header className={styles.topbar}>
         <div className={styles.topbarLocation}><AriaButton className={styles.sidebarToggle} type="button" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} render={domProps => <button {...domProps} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} />} aria-expanded={!collapsed} aria-controls="workspace-sidebar" onPress={event => toggleSidebar(event.pointerType !== 'keyboard' && event.pointerType !== 'virtual')}><Icon name="panel-left" /></AriaButton><nav className={styles.desktopContext} aria-label="Breadcrumb"><span>Workspace</span><Icon name="chevron-right" />{detail ? <><Link href="/tasks">Agreements</Link><Icon name="chevron-right" /><span aria-current="page">{detail}</span></> : <span aria-current="page">{section}</span>}</nav></div>
