@@ -4,13 +4,14 @@ import { ArrowRight, ArrowUpRight } from "@phosphor-icons/react/dist/ssr";
 import { LandingHeader } from "../components/landing-header";
 import { ProductBanner } from "../components/product-banner";
 import LandingEvidence from "../components/landing-evidence";
+import { LandingScroll } from "../components/landing-scroll";
 const container = "mx-auto w-full max-w-[1360px] px-6 sm:px-10 lg:px-16";
 const link =
   "group inline-flex min-h-11 items-center gap-3 text-sm font-medium text-ink underline underline-offset-4 decoration-[var(--hairline)] hover:decoration-ink";
 export const metadata: Metadata = {
   title: "Agree on what good looks like.",
   description:
-    "Clear scope, inspectable evidence, human decisions. A shared starting point for work.",
+    "Clear scope, inspectable evidence, human decisions.",
 };
 const steps = [
   {
@@ -45,6 +46,7 @@ export default function HomePage() {
         Skip to content
       </a>
       <LandingHeader />
+      <LandingScroll />
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           id="agreement"
@@ -54,9 +56,7 @@ export default function HomePage() {
           }
         >
           <div>
-            <p className="mb-8 flex items-center gap-3 font-mono text-[11px] tracking-[.12em] uppercase text-muted">
-              <span className="h-px w-8 bg-[#a9583e]" />A shared starting point
-            </p>
+
             <h1 className="mb-7 max-w-[620px] text-[clamp(3.1rem,5.4vw,5.1rem)] leading-[1.02] font-semibold tracking-[-.055em]">
               Agree on what
               <br />
