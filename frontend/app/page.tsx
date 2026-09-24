@@ -51,10 +51,7 @@ export default function HomePage() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section
           id="agreement"
-          className={
-            container +
-            " grid gap-12 pt-12 pb-14 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16 lg:pt-16 lg:pb-20"
-          }
+          className={container + " pt-16 pb-14 lg:pt-24 lg:pb-20"}
         >
           <div>
             <h1 className="mb-7 max-w-[620px] text-[clamp(3.1rem,5.4vw,5.1rem)] leading-[1.02] font-semibold tracking-[-.055em]">
@@ -91,8 +88,8 @@ export default function HomePage() {
               Localization JSON today. Human decisions, always.
             </p>
           </div>
-          <ProductBanner />
         </section>
+        <ProductBanner />
         <section id="capabilities" className={container + " py-12 lg:py-20"}>
           <div className="grid gap-8 border-t border-[var(--hairline)] pt-8 lg:grid-cols-[1fr_2fr] lg:gap-20">
             <div>
