@@ -54,6 +54,6 @@ Generated integration ABI: `PactraEscrow.abi.json`. Constructor requires nonzero
 
 Tracked in [deployments/](deployments/):
 
-- **Testnet** (BOT Chain Testnet, chainId 968): `0xf199e1127daf2b79417bbe2517929e429bdcc8a0` — [record](deployments/bot-testnet-968.json), [explorer](https://scan.bohr.life/address/0xf199e1127daf2b79417bbe2517929e429bdcc8a0).
+- **Testnet** (BOT Chain Testnet, chainId 968): `0x65c928E9C8c102B3a95eE716AD0a32A5Bf6AE624` — [record](deployments/bot-testnet-968.json), [explorer](https://scan.bohr.life/address/0x65c928E9C8c102B3a95eE716AD0a32A5Bf6AE624).
 - **Mainnet** (BOT Chain Mainnet, chainId 677): `0x2f4863b44c971dF701db831ae736Fdc0485B74DD` — [record](deployments/bot-mainnet-677.json), [explorer](https://scan.botchain.ai/address/0x2f4863b44c971dF701db831ae736Fdc0485B74DD).
 Verify BOT Chain network/official router/token details at deployment time, not from a stale example. Never commit private keys, mnemonic, production RPC credentials or broadcast files with secrets.

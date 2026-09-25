@@ -1,12 +1,16 @@
 {
   "chainId": 968,
   "network": "BOT Chain Testnet",
-  "address": "0xf199e1127daf2b79417bbe2517929e429bdcc8a0",
-  "transactionHash": "0x77654f32e930fdbf31800e389f37754c56a4be7a239675db5024421a2219ee2d",
-  "blockNumber": "24594241",
-  "blockHash": "0x1d331bd7561c81b6fcd3f45b8b833034981b4a3ff59393348c11df0d37dd5fc3",
-  "attestor": "0xC246F3C5E628553bB42b7Ef7F55476C9231217A0",
-  "runtimeCodeHash": "0x2b7ba446890c541453be2033a725535d718e91e3eecd36975cee2bb3d92055a3",
+  "address": "0x65c928E9C8c102B3a95eE716AD0a32A5Bf6AE624",
+  "transactionHash": "0x919a1e842aa05da155fd1f1bf8fb0ea8b593808b14488fe705fc31a40589945d",
+  "blockNumber": "24648484",
+  "blockHash": "0x606004989c794e27a07e8c273c86772b63bdb93a31157d87b7732bae6f7dafa5",
+  "attestor": "0xB54eFa2a7f5C7B39F6514F8CF9F0bF21eC707b74",
+  "deployer": "0x6c65b86D73d483c86be78960aB4C12c039262dF2",
+  "gasUsed": "2652932",
+  "effectiveGasPrice": "20000000000",
+  "runtimeCodeHash": "0xbf2187dbe8ef7ab571ce74e37f202be669bd0fc5b03f5a21d213a8795bf78d92",
   "status": "verified",
-  "explorer": "https://scan.bohr.life/address/0xf199e1127daf2b79417bbe2517929e429bdcc8a0"
+  "explorer": "https://scan.bohr.life/address/0x65c928E9C8c102B3a95eE716AD0a32A5Bf6AE624",
+  "notes": "Re-deployed 2026-09-25 with team-controlled attestor 0xB54eFa2a7f5C7B39F6514F8CF9F0bF21eC707b74 (same key as mainnet escrow, key custody via PACTRA_ONCHAIN_ATTESTOR_KEY_FILE) so feature testing can sign evidence receipts. Previous deployment 0xf199e1127daf2b79417bbe2517929e429bdcc8a0 had immutable attestor 0xC246F3C5E628553bB42b7Ef7F55476C9231217A0 whose private key was lost with a decommissioned VPS; that contract remains on chain but can no longer receive valid submissions."
 }
