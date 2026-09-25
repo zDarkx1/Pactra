@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import { Button, Checkbox, Dialog, Heading, Label, Modal, ModalOverlay, TextArea, TextField } from 'react-aria-components';
+import { Checkbox, Dialog } from 'radix-ui';
 import { useWorkspace } from '../workspace-provider';
 import { Icon } from '../ui';
 import { workspaceRequest, WorkspaceError } from '../../lib/workspace-client';
@@ -164,7 +164,7 @@ function DeliverableReview({ task, deliverable, role }: { task: Task; deliverabl
     } catch (cause) { setConfirmation(null); setInputError(cause instanceof Error ? cause.message : 'Check the input before continuing.'); }
   }
   return <section className={styles.section} aria-labelledby={heading}>
-    <div className={styles.sectionHeading}><h3 id={heading}>{deliverable.title}</h3><Button className={styles.secondary} isDisabled={review.busy || confirmation !== null} onPress={() => void review.reload()}><Icon name="refresh" />Read current review</Button></div>
+    <div className={styles.sectionHeading}><h3 id={heading}>{deliverable.title}</h3><button type="button" className={styles.secondary} disabled={review.busy || confirmation !== null} onClick={() => void review.reload()}><Icon name="refresh" />Read current review</button></div>
     <p className={styles.criteria}>{deliverable.criteria}</p>
     <div ref={feedback} tabIndex={-1} className={review.error || review.feedback || inputError ? styles.notice : styles.srOnly} role={review.error || inputError ? 'alert' : 'status'}>
       {inputError || review.error}{review.feedback && <p>{review.feedback}</p>}
@@ -180,19 +180,19 @@ function DeliverableReview({ task, deliverable, role }: { task: Task; deliverabl
       {h.state === 'disputed' && <p className={styles.notice}>{freezeWarning}</p>}
       <VersionHistory history={h} />
       {(canSubmit || canReview || canDispute) && <div className={styles.stack}>
-        {canSubmit && <TextField className={styles.field} value={raw} onChange={setRaw} isDisabled={locked}>
-          <Label>{h.state === 'revision_requested' ? 'Revised artifact · raw JSON' : 'Artifact · raw JSON'}</Label>
-          <TextArea className={styles.sourceInput} rows={8} maxLength={16384} spellCheck={false} autoComplete="off" />
+        {canSubmit && <div className={styles.field}>
+          <label htmlFor={heading + '-artifact'}>{h.state === 'revision_requested' ? 'Revised artifact · raw JSON' : 'Artifact · raw JSON'}</label>
+          <textarea id={heading + "-artifact"} value={raw} onChange={event => setRaw(event.target.value)} disabled={locked} className={styles.sourceInput} rows={8} maxLength={16384} spellCheck={false} autoComplete="off" />
           <p className={styles.hint}>Flat object of string values; at most 100 keys and 16 KiB. The raw JSON is sent unchanged so the server can reject duplicate keys and malformed Unicode. Do not include secrets.</p>
-        </TextField>}
-        <TextField className={styles.field} value={notes} onChange={setNotes} isDisabled={locked}>
-          <Label>Review notes (optional)</Label><TextArea maxLength={2000} rows={3} autoComplete="off" />
+        </div>}
+        <div className={styles.field}>
+          <label htmlFor={heading + "-notes"}>Review notes (optional)</label><textarea id={heading + "-notes"} value={notes} onChange={event => setNotes(event.target.value)} disabled={locked} maxLength={2000} rows={3} autoComplete="off" />
           <p className={styles.hint}>Visible to both participants; retained in immutable history. At most 2000 characters.</p>
-        </TextField>
+        </div>
         <div className={styles.actions}>
-          {canSubmit && <Button className={styles.primary} isDisabled={locked || !raw.trim()} onPress={() => setConfirmation('submit')}>{h.state === 'revision_requested' ? 'Review revision submission' : 'Review submission'}</Button>}
-          {canReview && <><Button className={styles.primary} isDisabled={locked} onPress={() => setConfirmation('accept')}>Accept latest version…</Button><Button className={styles.secondary} isDisabled={locked || remaining === 0} onPress={() => setConfirmation('request_revision')}>Request revision…</Button></>}
-          {canDispute && <Button className={styles.danger} isDisabled={locked} onPress={() => setConfirmation('dispute')}><Icon name="info" />Flag dispute…</Button>}
+          {canSubmit && <button type="button" className={styles.primary} disabled={locked || !raw.trim()} onClick={() => setConfirmation('submit')}>{h.state === 'revision_requested' ? 'Review revision submission' : 'Review submission'}</button>}
+          {canReview && <><button type="button" className={styles.primary} disabled={locked} onClick={() => setConfirmation('accept')}>Accept latest version…</button><button type="button" className={styles.secondary} disabled={locked || remaining === 0} onClick={() => setConfirmation('request_revision')}>Request revision…</button></>}
+          {canDispute && <button type="button" className={styles.danger} disabled={locked} onClick={() => setConfirmation('dispute')}><Icon name="info" />Flag dispute…</button>}
         </div>
         {canReview && remaining === 0 && <p className={styles.hint}>No revisions remain under the accepted terms. Another revision cannot be requested.</p>}
         {canDispute && <p className={styles.hint}>{freezeWarning}</p>}
@@ -200,7 +200,7 @@ function DeliverableReview({ task, deliverable, role }: { task: Task; deliverabl
     </>}
     {review.intent && <div className={styles.notice}>
       <p>Unresolved intent: {actionLabels[review.intent.action]}. New edits remain blocked. Retry first reads the server, then sends only the retained original key and payload.</p>
-      <Button className={styles.secondary} isDisabled={review.busy} onPress={() => void review.send()}>Read server and retry same intent</Button>
+      <button type="button" className={styles.secondary} disabled={review.busy} onClick={() => void review.send()}>Read server and retry same intent</button>
       <p className={styles.hint}>Leaving this view or changing account clears the in-memory intent. After returning, inspect the current history before considering another action.</p>
     </div>}
     {confirmation && h && <ReviewConfirmation action={confirmation} history={h} notes={notes} raw={raw} onCancel={() => setConfirmation(null)} onConfirm={confirm} />}
@@ -245,23 +245,26 @@ function CheckerEvidence({ submission }: { submission: DeliverySubmission }) {
 }
 function ReviewConfirmation({ action, history, notes, raw, onCancel, onConfirm }: { action: DeliveryAction; history: DeliveryHistory; notes: string; raw: string; onCancel: () => void; onConfirm: (acknowledged: boolean) => void }) {
   const [acknowledged, setAcknowledged] = useState(false);
-  return <ModalOverlay isOpen isDismissable onOpenChange={open => { if (!open) onCancel(); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-    <Modal className="max-h-[calc(100dvh-32px)] w-full max-w-2xl overflow-y-auto rounded-xl border border-[var(--hairline)] bg-[var(--canvas)] p-6 text-[var(--body)] shadow-xl">
-      <Dialog className={styles.stack}>
-        <Heading slot="title" className="text-xl font-semibold">{actionLabels[action]}?</Heading>
-        <p>{warning}</p>
+  const [returnTarget] = useState(() => typeof document !== "undefined" ? document.activeElement as HTMLElement | null : null);
+  const acknowledgmentId = useId();
+  return <Dialog.Root open onOpenChange={open => { if (!open) onCancel(); }}><Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/40" />
+    <Dialog.Content onCloseAutoFocus={event => { event.preventDefault(); requestAnimationFrame(() => { if (returnTarget?.isConnected && !returnTarget.hasAttribute("disabled")) returnTarget.focus({ preventScroll: true }); else document.getElementById("main-content")?.focus({ preventScroll: true }); }); }} className="fixed top-1/2 left-1/2 z-[101] max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-[var(--hairline)] bg-[var(--canvas)] p-6 text-[var(--body)] shadow-xl">
+      <div className={styles.stack}>
+        <Dialog.Title className="text-xl font-semibold">{actionLabels[action]}?</Dialog.Title>
+        <Dialog.Description>{warning}</Dialog.Description>
         {action === 'dispute' ? <p className={styles.notice}>{freezeWarning}</p> : action === 'accept' ? <p>Accepting is terminal for this deliverable, including against later disputes. This records human review only.</p> : action === 'request_revision' ? <p>Ask the worker for a voluntary revision. Revisions remaining: {deliveryRevisionsRemaining(history)}.</p> : <p>This creates an immutable version, visible to both participants. It does not create an obligation to continue working.</p>}
         <p>Current version: {history.latest_version === 0 ? 'none (initial submission)' : history.latest_version}</p>
         <p className={styles.hint}>Exact latest artifact hash: <code className={styles.fullValue}>{history.latest_artifact_hash || '(none)'}</code></p>
         <p className={styles.hint}>Exact manifest hash: <code className={styles.fullValue}>{history.manifest_hash}</code></p>
         {action === 'submit' && <details className={styles.disclosure}><summary>Review exact raw JSON to submit</summary><pre className={styles.source} tabIndex={0}>{raw}</pre></details>}
         {notes && <p className={styles.criteria}>{notes}</p>}
-        <Checkbox isSelected={acknowledged} onChange={setAcknowledged} className="group flex min-h-11 cursor-pointer items-start gap-3 rounded p-2 outline-offset-4 data-focus-visible:outline-2 data-focus-visible:outline-[var(--focus)]">
-          <span aria-hidden="true" className="mt-1 flex size-5 shrink-0 items-center justify-center rounded border border-[var(--control-border)] group-data-selected:bg-[var(--primary)] group-data-selected:text-[var(--on-primary)]">{acknowledged && <Icon name="check" />}</span>
+        <label htmlFor={acknowledgmentId} className="flex min-h-11 cursor-pointer items-start gap-3 rounded p-2">
+          <Checkbox.Root id={acknowledgmentId} checked={acknowledged} onCheckedChange={value => setAcknowledged(value === true)} className="mt-1 flex size-6 min-h-6 shrink-0 items-center justify-center rounded border border-[var(--control-border)] bg-canvas p-0 data-[state=checked]:bg-coral"><Checkbox.Indicator><Icon name="check" /></Checkbox.Indicator></Checkbox.Root>
           <span>I understand this is voluntary unfunded review: no deposit, no obligation to start work, and no financial deadlines.</span>
-        </Checkbox>
-        <div className={styles.actions}><Button autoFocus className={styles.secondary} onPress={onCancel}>Go back</Button><Button className={action === 'dispute' ? styles.danger : styles.primary} isDisabled={!acknowledged} onPress={() => onConfirm(acknowledged)}>Confirm {actionLabels[action].toLowerCase()}</Button></div>
-      </Dialog>
-    </Modal>
-  </ModalOverlay>;
+        </label>
+        <div className={styles.actions}><button type="button" autoFocus className={styles.secondary} onClick={onCancel}>Go back</button><button type="button" className={action === 'dispute' ? styles.danger : styles.primary} disabled={!acknowledged} onClick={() => onConfirm(acknowledged)}>Confirm {actionLabels[action].toLowerCase()}</button></div>
+      </div>
+    </Dialog.Content>
+  </Dialog.Portal></Dialog.Root>;
 }

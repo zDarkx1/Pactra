@@ -6,7 +6,6 @@ import {
   useState,
   type ComponentType,
 } from "react";
-import { Button } from "react-aria-components";
 import Link from "next/link";
 export function LazyEvidence() {
   const root = useRef<HTMLDivElement>(null);
@@ -54,7 +53,7 @@ export function LazyEvidence() {
     <div
       ref={root}
       data-lazy-evidence={Component ? "ready" : "waiting"}
-      className="min-h-[360px]"
+      className="min-h-[540px] sm:min-h-[460px]"
     >
       {Component ? (
         <Component />
@@ -71,12 +70,12 @@ export function LazyEvidence() {
               ? "The sample could not load. Retry, or open the full checker."
               : "The sample loads as you approach this section."}
           </p>
-          <Button
-            onPress={() => void load()}
+          <button type="button"
+            onClick={() => void load()}
             className="min-h-11 w-fit rounded-lg bg-ink px-4 text-sm text-canvas hover:bg-[#a9583e]"
           >
             Load interactive sample
-          </Button>
+          </button>
           <Link href="/checker" className="text-sm text-ink underline">
             Open the full checker
           </Link>

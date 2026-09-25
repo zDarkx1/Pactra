@@ -197,8 +197,8 @@ test('UI source safety wiring: identity teardown, immutable retry, real evidence
   assert.match(ui, /body: attempt\.body/);
   assert.match(ui, /const locked = .*!!review\.intent/);
   assert.match(ui, /<SessionExpired/);
-  assert.match(ui, /<Checkbox isSelected=\{acknowledged\}/);
-  assert.match(ui, /isDisabled=\{!acknowledged\}/);
+  assert.match(ui, /<Checkbox\.Root[^>]*checked=\{acknowledged\}/);
+  assert.match(ui, /disabled=\{!acknowledged\}/);
   assert.match(ui, /JSON\.stringify\(checker, null, 2\)/);
   assert.doesNotMatch(ui + model, /localStorage|sessionStorage|indexedDB|dangerouslySetInnerHTML|console\./);
   assert.doesNotMatch(ui, /style=|delivery_deadline|review_period_hours|setInterval/);

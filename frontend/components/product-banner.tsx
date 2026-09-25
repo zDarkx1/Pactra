@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "react-aria-components";
 import { ArrowUpRight, Pause, Play, ArrowDown } from "@phosphor-icons/react";
 import GhostFibers from "./ghost-fibers";
 export function ProductBanner() {
@@ -9,21 +8,19 @@ export function ProductBanner() {
   return (
     <section
       data-expand-scene
-      className="relative z-50 bg-canvas"
+      className="relative bg-canvas motion-safe:h-[200svh]"
       aria-label="Find common ground"
     >
       <div
         data-expand-stage
-        className="relative top-0 h-svh min-h-[480px] overflow-hidden"
+        className="relative top-0 h-svh min-h-[480px] overflow-hidden motion-safe:sticky"
       >
         <div
           data-expand-intro
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-[7vw] hidden max-w-[34vw] -translate-y-1/2 lg:block"
         >
-          <p className="mb-6 font-mono text-xs uppercase tracking-widest text-muted">
-            From your side. From their side.
-          </p>
+
           <p className="font-serif text-[clamp(3rem,5vw,5.5rem)] leading-[1.02] tracking-tight">
             Meet on
             <br />
@@ -53,9 +50,6 @@ export function ProductBanner() {
             data-expand-copy
             className="relative w-full max-w-[960px] px-8 text-center"
           >
-            <p className="mb-7 font-mono text-[11px] tracking-[.15em] uppercase text-white/75">
-              Scope / evidence / people
-            </p>
             <h2
               id="product-title"
               className="mb-7 font-serif text-[clamp(3.2rem,7.6vw,7.4rem)] leading-[.98] font-normal tracking-[-.045em] text-canvas"
@@ -81,15 +75,15 @@ export function ProductBanner() {
             </Link>
           </div>
         </section>
-        <Button
+        <button type="button"
           aria-label={
             paused ? "Play background animation" : "Pause background animation"
           }
-          onPress={() => setPaused(!paused)}
+          onClick={() => setPaused(!paused)}
           className="absolute right-[8vw] bottom-[16%] z-10 flex size-11 items-center justify-center rounded-full border border-white/40 bg-[#120f17] p-0 text-white hover:bg-[#343044]"
         >
           {paused ? <Play size={16} /> : <Pause size={16} />}
-        </Button>
+        </button>
         <div
           aria-hidden="true"
           data-expand-progress

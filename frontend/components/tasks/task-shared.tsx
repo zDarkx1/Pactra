@@ -8,9 +8,50 @@ import { Icon } from '../ui';
 import { WorkspaceError, workspaceRequest } from '../../lib/workspace-client';
 import type { Task } from '../../lib/workspace-types';
 import styles from './task-styles';
+import { Dialog } from 'radix-ui';
 
-export function TaskButton({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button {...props}><span className={styles.buttonContent}>{children}</span></button>;
+export function TaskButton({ children, type = 'button', ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type={type} {...props}><span className={styles.buttonContent}>{children}</span></button>;
+}
+
+// Mount for one immutable intent. The caller retains all role/transport checks.
+export function WorkspaceConfirmation({ title, description, acknowledgement, confirmLabel, children, onDismiss, onConfirm }: {
+  title: string; description: string; acknowledgement: string; confirmLabel: string;
+  children?: ReactNode; onDismiss: () => void; onConfirm: (acknowledged: boolean) => void;
+}) {
+  const { status, address, sessionKey, config } = useWorkspace();
+  const identity = `${sessionKey}:${config.chain?.id}:${address?.toLowerCase()}`;
+  const initialIdentity = useRef(identity);
+  const valid = config.enabled && status === 'signedIn' && Boolean(address) && identity === initialIdentity.current;
+  const [acknowledged, setAcknowledged] = useState(false);
+  const sent = useRef(false);
+  const opener = useRef<HTMLElement | null>(null);
+  const back = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }, []);
+  useEffect(() => { if (!valid) onDismiss(); }, [valid, onDismiss]);
+  return <Dialog.Root open={valid} onOpenChange={open => { if (!open) onDismiss(); }}>
+    <Dialog.Portal>
+      <Dialog.Overlay className={styles.confirmationOverlay} />
+      <Dialog.Content className={styles.radixConfirmation} onOpenAutoFocus={event => { event.preventDefault(); back.current?.focus(); }} onCloseAutoFocus={event => {
+        event.preventDefault();
+        if (opener.current?.isConnected && !opener.current.matches(':disabled')) opener.current.focus();
+        else document.getElementById('main-content')?.focus();
+      }}>
+        <Dialog.Title>{title}</Dialog.Title>
+        <Dialog.Description>{description}</Dialog.Description>
+        {children}
+        <label className={styles.acknowledgement}><input type="checkbox" checked={acknowledged} onChange={event => setAcknowledged(event.target.checked)} /><span>{acknowledgement}</span></label>
+        <div className={styles.actions}>
+          <button ref={back} type="button" className={styles.secondary} onClick={onDismiss}>Go back</button>
+          <TaskButton className={styles.primary} disabled={!acknowledged || !valid} onClick={() => {
+            if (!acknowledged || !valid || sent.current) return;
+            sent.current = true;
+            onConfirm(acknowledged);
+          }}>{confirmLabel}</TaskButton>
+        </div>
+      </Dialog.Content>
+    </Dialog.Portal>
+  </Dialog.Root>;
 }
 
 export function TaskSession({ children }: { children: ReactNode }) {

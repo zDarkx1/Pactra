@@ -44,8 +44,6 @@ export function LandingScroll() {
               if (scene && stage && panel) {
                 const desktop = window.innerWidth >= 1024;
                 // Native sticky scene; no wheel/touch interception, no GSAP pin spacer.
-                gsap.set(scene, { height: "200svh" });
-                gsap.set(stage, { position: "sticky" });
                 const timeline = gsap.timeline({
                   scrollTrigger: {
                     trigger: scene,
@@ -95,9 +93,34 @@ export function LandingScroll() {
                   0,
                 );
               }
+              const story = root.querySelector<HTMLElement>("[data-scope-story]");
+              if (story) {
+                const paper = gsap.timeline({ scrollTrigger: {
+                  trigger: story, start: "top 65%", end: "bottom 80%", scrub: 0.3,
+                  invalidateOnRefresh: true,
+                }});
+                paper.fromTo('[data-scope-paper="back"]',
+                  { rotation: -13, xPercent: -9, y: 15 },
+                  { rotation: -2, xPercent: -1, y: -8, ease: "none" }, 0);
+                paper.fromTo('[data-scope-paper="middle"]',
+                  { rotation: 10, xPercent: 7, y: -7 },
+                  { rotation: 2, xPercent: 1, y: -4, ease: "none" }, 0);
+                paper.fromTo('[data-scope-paper="front"]',
+                  { rotation: -4, y: 20 }, { rotation: 0, y: 0, ease: "none" }, 0);
+                paper.fromTo('[data-scope-seal]', { scale: 0.75, rotation: -25 },
+                  { scale: 1, rotation: -12, ease: "back.out(1.4)", duration: 0.25 }, 0.3);
+              }
+              const decision = root.querySelector("[data-decision-line]");
+              if (decision) gsap.fromTo(decision, { scaleX: 0.05 }, { scaleX: 1, ease: "none",
+                scrollTrigger: { trigger: "#principles", start: "top 80%", end: "center 50%", scrub: 0.3 } });
+              const journal = root.querySelector("[data-journal-art]");
+              if (journal) gsap.fromTo(journal,
+                { clipPath: "polygon(0 0, 90% 0, 100% 12%, 100% 100%, 0 100%)" },
+                { clipPath: "polygon(0 0, 100% 0, 100% 0%, 100% 100%, 0 100%)", ease: "none",
+                  scrollTrigger: { trigger: "#journal", start: "top 90%", end: "center 60%", scrub: 0.3 } });
               root
                 .querySelectorAll<HTMLElement>(
-                  "#capabilities li, #principles > div, #journal > a",
+                  "[data-scope-step]",
                 )
                 .forEach((element) => {
                   // Never hide readable content or focusable controls behind opacity.
