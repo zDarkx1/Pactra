@@ -40,7 +40,7 @@ async function upstream(path: string, method: string, token: string, body?: stri
   if (body !== undefined) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', 'Bearer ' + token);
   if (idempotencyKey !== undefined) headers.set('Idempotency-Key', idempotencyKey);
-  return fetch(new URL('/api/v1/' + path, base.origin), { method, headers, body, signal: AbortSignal.timeout(path === 'review' ? 35000 : 10000), redirect: 'error', cache: 'no-store', credentials: 'omit' });
+  return fetch(new URL('/api/v1/' + path, base.origin), { method, headers, body, signal: AbortSignal.timeout(path === 'review' || path.includes('/onchain') || path.startsWith('onchain/') || path.startsWith('arbiter/') ? 35000 : 10000), redirect: 'error', cache: 'no-store', credentials: 'omit' });
 }
 async function data(response: Response, limit = 4 * 1024 * 1024): Promise<unknown> {
   if (response.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') throw new Error('Invalid response content type.');

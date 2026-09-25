@@ -86,7 +86,7 @@ func New(pool *pgxpool.Pool, c Config) (http.Handler, error) {
 	m.HandleFunc("POST /api/v1/review", s.budgetedAI(c.AIHandler, c.AILimits))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeout := 5 * time.Second
-		if r.URL.Path == "/api/v1/review" {
+		if r.URL.Path == "/api/v1/review" || strings.Contains(r.URL.Path, "/onchain") || strings.HasPrefix(r.URL.Path, "/api/v1/arbiter/") {
 			timeout = 35 * time.Second
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
