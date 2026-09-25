@@ -1,6 +1,6 @@
 # Smart contract workstream
 
-`src/PactraEscrow.sol` is a source-only implementation of the owner-approved settlement decisions. It is **not deployed, not independently reviewed, and not authorized to hold funds**; deployment is blocked by the release gate in [settlement decisions](../docs/SETTLEMENT_DECISIONS.md). Never send BOT to an address from a demo placeholder.
+`src/PactraEscrow.sol` implements the owner-approved settlement decisions and is deployed on BOT Chain testnet (968) and mainnet (677); records in [deployments/](deployments/). It is **not independently reviewed**; the release gate in [settlement decisions](../docs/SETTLEMENT_DECISIONS.md) still requires independent review before any production financial guarantee. Never send BOT to an address from a demo placeholder.
 
 Read [settlement decisions](../docs/SETTLEMENT_DECISIONS.md), [architecture](../docs/ARCHITECTURE.md) and [security](../docs/SECURITY.md).
 
@@ -48,9 +48,12 @@ General post-funding cancellation; revision-deadline refunds; fees; worker reass
 
 Existing lifecycle/withdrawal/invariant tests are retained and migrated to the breaking v2 ABI. Additional security suites test manifest squatting/configuration binding, receipt tampering/replay/expiry/canonical signatures, ERC-1271 validation, no-submission boundaries, bilateral-only fallback and conservation. See [contract verification](../docs/CONTRACT_VERIFICATION.md) for actual commands, RED/GREEN evidence and limitations. `FixtureAttestor` in legacy financial tests and the chain-31337-only demo is deliberately synthetic; never deploy it as a real accessibility attestor. Security tests and invariant handler also exercise deterministic EOA-signed fixture receipts, not live artifacts.
 
-Generated integration ABI: `PactraEscrow.abi.json`. Constructor requires nonzero `evidenceAttestor`; deployment script reads the public address `EVIDENCE_ATTESTOR` without a default. Source remains undeployed. Coordination spec: `/root/pactra-settlement-contract-interface.md` (local handoff).
+Generated integration ABI: `PactraEscrow.abi.json`. Constructor requires nonzero `evidenceAttestor`; deployment script reads the public address `EVIDENCE_ATTESTOR` without a default. Coordination spec: `/root/pactra-settlement-contract-interface.md` (local handoff).
 
 ## Deployment records
 
-Tracked in [deployments/](deployments/): testnet NOT DEPLOYED, mainnet NOT DEPLOYED.
+Tracked in [deployments/](deployments/):
+
+- **Testnet** (BOT Chain Testnet, chainId 968): `0x65c928E9C8c102B3a95eE716AD0a32A5Bf6AE624` — [record](deployments/bot-testnet-968.json), [explorer](https://scan.bohr.life/address/0x65c928E9C8c102B3a95eE716AD0a32A5Bf6AE624).
+- **Mainnet** (BOT Chain Mainnet, chainId 677): `0x2f4863b44c971dF701db831ae736Fdc0485B74DD` — [record](deployments/bot-mainnet-677.json), [explorer](https://scan.botchain.ai/address/0x2f4863b44c971dF701db831ae736Fdc0485B74DD).
 Verify BOT Chain network/official router/token details at deployment time, not from a stale example. Never commit private keys, mnemonic, production RPC credentials or broadcast files with secrets.

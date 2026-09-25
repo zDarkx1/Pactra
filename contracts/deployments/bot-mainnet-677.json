@@ -1,0 +1,16 @@
+{
+  "chainId": 677,
+  "network": "BOT Chain Mainnet",
+  "address": "0x2f4863b44c971dF701db831ae736Fdc0485B74DD",
+  "transactionHash": "0x6b9335216a97a8347ae0251f826b03b67e51467c0f7eaa6e57c59dd927dd358f",
+  "blockNumber": "24478380",
+  "blockHash": "0x8f3217615bb5afed6d036632d0935746c3038cd37b06d04bffe706d221d50b63",
+  "attestor": "0xB54eFa2a7f5C7B39F6514F8CF9F0bF21eC707b74",
+  "deployer": "0x6c65b86D73d483c86be78960aB4C12c039262dF2",
+  "gasUsed": "2652932",
+  "effectiveGasPrice": "20000000000",
+  "runtimeCodeHash": "0xbf2187dbe8ef7ab571ce74e37f202be669bd0fc5b03f5a21d213a8795bf78d92",
+  "status": "verified",
+  "explorer": "https://scan.botchain.ai/address/0x2f4863b44c971dF701db831ae736Fdc0485B74DD",
+  "notes": "New team-controlled attestor generated for mainnet; production signing key custody documented in backend PACTRA_ONCHAIN_ATTESTOR_KEY_FILE. Testnet contract 0xf199e1127daf2b79417bbe2517929e429bdcc8a0 (chain 968) retains its own immutable attestor 0xC246F3C5E628553bB42b7Ef7F55476C9231217A0."
+}
