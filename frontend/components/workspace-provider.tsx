@@ -33,7 +33,7 @@ function SessionController({ config, children, queryClient }: { config: PublicWo
   const active = useRef<AbortController | null>(null);
   const busy = useRef(false);
   const [enqueueCleanup] = useState(createSessionCleanupQueue);
-  const enqueueLogout = useCallback(() => enqueueCleanup(() => workspaceRequest<void>('/auth/logout', { method: 'POST', body: '{}' })), [enqueueCleanup]);
+  const enqueueLogout = useCallback(() => enqueueCleanup(() => workspaceRequest<void>('/auth/logout', { method: 'POST', body: '{}', signal: AbortSignal.timeout(15000) })), [enqueueCleanup]);
   const walletKey = account.status === 'connected' ? account.address.toLowerCase() + ':' + account.chainId : '';
   const previousWallet = useRef('');
   const canSign = !!walletKey && account.chainId === config.chain?.id;
@@ -123,9 +123,9 @@ function SessionController({ config, children, queryClient }: { config: PublicWo
     invalidate();
     setSigning(true);
     setError(null);
-    try { await enqueueLogout(); disconnect(); }
-    catch { setError('Signed out of this view, but server revocation failed. Retry sign out to revoke the session.'); }
-    finally { busy.current = false; setSigning(false); }
+    try { await enqueueLogout(); }
+    catch (cause) { setError(cause instanceof WorkspaceError ? cause.message : 'Signed out of this view, but the server revocation is uncertain. Retry sign out to confirm.'); }
+    finally { disconnect(); busy.current = false; setSigning(false); }
   }
   const authenticated = session && session.walletKey === walletKey && canSign;
   return <WorkspaceContext.Provider value={{ status: authenticated ? 'signedIn' : loading && canSign ? 'loading' : 'signedOut', address: authenticated ? session.address : null, config, error, sessionKey, signing, signIn, signOut }}>{children}</WorkspaceContext.Provider>;

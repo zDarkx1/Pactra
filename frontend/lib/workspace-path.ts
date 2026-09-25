@@ -1,6 +1,6 @@
 import { parseTask, uuidPattern, type Task } from './workspace-types.ts';
 
-export type WorkspaceRoute = { path: string; kind: 'auth' | 'me' | 'tasks' | 'task' | 'taskMutation' | 'delivery' | 'review' | 'settlement' | 'arbiterQueue'; methods: readonly string[] };
+export type WorkspaceRoute = { path: string; kind: 'auth' | 'me' | 'tasks' | 'task' | 'taskMutation' | 'delivery' | 'review' | 'criteriaDraft' | 'settlement' | 'arbiterQueue'; methods: readonly string[] };
 export function workspaceRoute(path: string): WorkspaceRoute | null {
   // Validate before URL parsing: no decoding, normalization, alternate targets or traversal.
   if (!path.startsWith('/') || /[%\\?#\s]/.test(path)) return null;
@@ -10,6 +10,7 @@ export function workspaceRoute(path: string): WorkspaceRoute | null {
   if (segments.length === 6 && segments[0] === 'arbiter' && segments[1] === 'tasks' && uuidPattern.test(segments[2]) && segments[3] === 'deliverables' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segments[4]) && segments[4].length <= 64 && segments[5] === 'evidence') return { path, kind: 'settlement', methods: ['GET'] };
   if (path === '/me') return { path, kind: 'me', methods: ['GET'] };
   if (path === '/review') return { path, kind: 'review', methods: ['POST'] };
+  if (path === '/criteria/draft') return { path, kind: 'criteriaDraft', methods: ['POST'] };
   if (/^\/auth\/(challenge|verify|logout)$/.test(path)) return { path, kind: 'auth', methods: ['POST'] };
   if (path === '/tasks') return { path, kind: 'tasks', methods: ['GET', 'POST'] };
   if (segments[0] !== 'tasks' || !uuidPattern.test(segments[1] || '')) return null;

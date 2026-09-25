@@ -1,6 +1,7 @@
 import { parseTask, uuidPattern, type Task } from './workspace-types.ts';
 import { parseSettlementResponse } from './onchain-types.ts';
 import { parseAdvisoryReview, parseTaskPage, workspaceQuery, workspaceRoute, type TaskPage } from './workspace-path.ts';
+import { parseCriteriaDraftResponse } from './criteria.ts';
 let identity: { address: string; chainId: number } | null = null;
 const identityCleanups = new Set<() => void>();
 export function onWorkspaceIdentityChange(cleanup: () => void) {
@@ -63,6 +64,10 @@ export async function workspaceRequest<Result>(path: string, init: RequestInit =
     if (route.kind === 'review') {
       if (typeof init.body !== 'string') throw new Error('Missing review input.');
       return parseAdvisoryReview(result, JSON.parse(init.body)) as Result;
+    }
+    if (route.kind === 'criteriaDraft') {
+      if (typeof init.body !== 'string') throw new Error('Missing criteria draft input.');
+      return parseCriteriaDraftResponse(result) as Result;
     }
     if (pathname.startsWith('/tasks')) return parseTask(result) as Result;
     return result as Result;

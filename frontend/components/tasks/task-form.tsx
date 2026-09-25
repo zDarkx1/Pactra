@@ -5,7 +5,9 @@ import { Icon } from '../ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useWorkspace } from '../workspace-provider';
-import { createTaskAttempt } from '../../lib/workspace-client';
+import { createTaskAttempt, workspaceRequest } from '../../lib/workspace-client';
+import { buildDraftRequest, criteriaDiff, summarizeCriteria, validateCriteria, type CriteriaDraft as CriteriaDraftResponse, type CriteriaV1 } from '../../lib/criteria';
+import { createRequestGuard } from '../../app/checker/model';
 import { deadlineToUtc, isTaskAddress, newDeliverable, newTaskDraft, validateTaskDraft, type DeliverableDraft, type TaskDraft, type TaskFormErrors, type TaskValidation } from '../../lib/task-form';
 import { ManifestDetails } from './manifest-details';
 import { TaskButton, SessionExpired, TaskSession, WorkspaceConfirmation, taskErrorMessage, taskErrorStatus } from './task-shared';
@@ -13,6 +15,126 @@ import styles from './task-styles';
 
 function FormField({ name, label, help, error, children }: { name: string; label: string; help?: string; error?: string; children: ReactNode }) {
   return <div className={styles.field}><label htmlFor={name}>{label}</label>{children}{help && <p id={name + '-help'} className={styles.hint}>{help}</p>}{error && <p id={name + '-error'} className={styles.error}>{error}</p>}</div>;
+}
+
+function draftParams(draft: CriteriaV1, id: string): Record<string, unknown> {
+  return draft.checks.find(check => check.id === id)?.params ?? {};
+}
+
+function splitTerms(value: string): string[] {
+  return value.split(',').map(term => term.trim()).filter(term => term !== '');
+}
+
+// Memory-only AI draft assistant: brief goes to POST /api/v1/criteria/draft via
+// the BFF only after explicit consent. The response is validated before display,
+// so a fabricated draft can never appear. Edits stay local until applied.
+function CriteriaDraft({ index, onApply }: { index: number; onApply: (json: string) => void }) {
+  const prefix = 'deliverables.' + index + '.criteria-draft';
+  const [brief, setBrief] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [draft, setDraft] = useState<CriteriaV1 | null>(null);
+  const [base, setBase] = useState<CriteriaV1 | null>(null);
+  const [termsText, setTermsText] = useState('');
+  const [minText, setMinText] = useState('');
+  const [maxText, setMaxText] = useState('');
+  const [promptText, setPromptText] = useState('');
+  const [guard] = useState(createRequestGuard);
+  useEffect(() => () => guard.cancel(), [guard]);
+
+  function receive(criteria: CriteriaV1) {
+    const copy = JSON.parse(JSON.stringify(criteria)) as CriteriaV1;
+    setBase(criteria);
+    setDraft(copy);
+    const terms = draftParams(copy, 'required_terms').terms;
+    setTermsText(Array.isArray(terms) ? (terms as string[]).join(', ') : '');
+    const bounds = draftParams(copy, 'length_bounds');
+    setMinText(typeof bounds.min === 'number' ? String(bounds.min) : '');
+    setMaxText(typeof bounds.max === 'number' ? String(bounds.max) : '');
+    const review = draftParams(copy, 'human_review');
+    setPromptText(typeof review.prompt === 'string' ? review.prompt : '');
+    setError('');
+  }
+
+  async function generate() {
+    if (busy || !consent) return;
+    let body: string;
+    try { body = buildDraftRequest(brief); } catch (cause) { setError((cause as Error).message); return; }
+    const pending = guard.begin();
+    setBusy(true);
+    setError('');
+    try {
+      const result = await workspaceRequest<CriteriaDraftResponse>('/criteria/draft', { method: 'POST', body, signal: pending.signal });
+      if (pending.isCurrent()) receive(result.criteria);
+    } catch (cause) {
+      if (pending.isCurrent()) setError(cause instanceof Error ? cause.message : 'The AI draft is unavailable. Enter criteria manually.');
+    } finally {
+      if (pending.isCurrent()) setBusy(false);
+    }
+  }
+
+  function cancel() {
+    guard.cancel();
+    setBusy(false);
+  }
+
+  function patch(id: string, params: Record<string, unknown>) {
+    setDraft(current => current ? { ...current, checks: current.checks.map(check => check.id === id ? { ...check, params } : check) } : current);
+  }
+
+  function applyDraft() {
+    if (!draft) return;
+    try {
+      onApply(JSON.stringify(validateCriteria(draft)));
+      setError('');
+    } catch (cause) { setError((cause as Error).message); }
+  }
+
+  let draftError = '';
+  if (draft) {
+    try { validateCriteria(draft); } catch (cause) { draftError = (cause as Error).message; }
+  }
+  const diff = draft && base ? criteriaDiff(base, draft) : [];
+  const hasTerms = draft?.checks.some(check => check.id === 'required_terms') ?? false;
+  const hasPlaceholders = draft?.checks.some(check => check.id === 'placeholders') ?? false;
+  const hasBounds = draft?.checks.some(check => check.id === 'length_bounds') ?? false;
+  const hasReview = draft?.checks.some(check => check.id === 'human_review') ?? false;
+
+  return <div className={styles.stack}>
+    <FormField name={prefix + '-brief'} label="Criteria brief for AI draft" help="Optional. Sent to the AI provider only after you consent below. The AI returns an editable draft; nothing binds until you apply it and freeze the agreement.">
+      <textarea id={prefix + '-brief'} name={prefix + '-brief'} rows={3} maxLength={4000} value={brief} onChange={event => { setBrief(event.target.value); setError(''); }} placeholder="Describe the work in plain words, e.g. translate the greeting keeping {name} and the term Pactra" />
+    </FormField>
+    <label><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} /><span>Send this brief to the configured AI provider. Do not include private or sensitive content.</span></label>
+    <div className={styles.actions}>
+      <TaskButton type="button" className={styles.secondary} disabled={!brief.trim() || !consent || busy} aria-busy={busy} onClick={() => void generate()}>{busy ? 'Requesting draft…' : 'Generate draft'}</TaskButton>
+      {busy && <TaskButton type="button" className={styles.secondary} onClick={cancel}>Cancel draft</TaskButton>}
+      <span className={styles.hint} role="status">{busy ? 'Waiting for the draft. The agreement draft is unaffected.' : draft ? 'Draft received. Review and edit every value before applying.' : 'No draft requested yet.'}</span>
+    </div>
+    {error && <p role="alert" className={styles.error}>{error}</p>}
+    {draft && <div className={styles.stack}>
+      <p className={styles.hint}>{summarizeCriteria(draft)} Values came from the AI draft and stay editable until you apply them.</p>
+      {hasTerms && <FormField name={prefix + '-terms'} label="Required terms" help="Comma-separated. Spaces around commas are removed; matching stays literal.">
+        <input id={prefix + '-terms'} name={prefix + '-terms'} value={termsText} onChange={event => { setTermsText(event.target.value); patch('required_terms', { terms: splitTerms(event.target.value) }); }} placeholder="Pactra, invoice" autoComplete="off" />
+      </FormField>}
+      {hasPlaceholders && <div><label htmlFor={prefix + '-placeholders'}><input id={prefix + '-placeholders'} type="checkbox" checked={Boolean(draftParams(draft, 'placeholders').enabled)} onChange={event => patch('placeholders', { enabled: event.target.checked })} /> Preserve placeholders such as {'{name}'} across submission.</label></div>}
+      {hasBounds && <div className={styles.fieldGrid}>
+        <FormField name={prefix + '-min'} label="Minimum length" help="Whole characters, at least 0."><input id={prefix + '-min'} name={prefix + '-min'} inputMode="numeric" value={minText} onChange={event => { setMinText(event.target.value); patch('length_bounds', { min: /^\d+$/.test(event.target.value) ? Number(event.target.value) : NaN, max: draftParams(draft, 'length_bounds').max }); }} autoComplete="off" /></FormField>
+        <FormField name={prefix + '-max'} label="Maximum length" help="Whole characters, at most 4000."><input id={prefix + '-max'} name={prefix + '-max'} inputMode="numeric" value={maxText} onChange={event => { setMaxText(event.target.value); patch('length_bounds', { min: draftParams(draft, 'length_bounds').min, max: /^\d+$/.test(event.target.value) ? Number(event.target.value) : NaN }); }} autoComplete="off" /></FormField>
+      </div>}
+      {hasReview && <><FormField name={prefix + '-prompt'} label="Human review prompt" help="At most 500 characters. Shown to the human reviewer.">
+        <input id={prefix + '-prompt'} name={prefix + '-prompt'} maxLength={500} value={promptText} onChange={event => { setPromptText(event.target.value); patch('human_review', { ...draftParams(draft, 'human_review'), prompt: event.target.value }); }} autoComplete="off" />
+      </FormField>
+      <div><label htmlFor={prefix + '-required'}><input id={prefix + '-required'} type="checkbox" checked={Boolean(draftParams(draft, 'human_review').required)} onChange={event => patch('human_review', { ...draftParams(draft, 'human_review'), required: event.target.checked })} /> Human review is required before acceptance.</label></div></>}
+      <details className={styles.disclosure}><summary>View draft JSON preview</summary><pre className={styles.source} tabIndex={0} aria-label="Draft criteria JSON preview"><code>{JSON.stringify(draft, null, 2)}</code></pre></details>
+      {diff.length > 0 ? <ul className="grid gap-2 pl-5">{diff.map(line => <li key={line}>{line}</li>)}</ul> : <p className={styles.hint}>No manual changes yet. The preview matches the AI draft.</p>}
+      {draftError && <p className={styles.error}>{draftError}</p>}
+      <div className={styles.actions}>
+        <TaskButton type="button" className={styles.primary} disabled={busy || Boolean(draftError)} onClick={applyDraft}>Use draft as criteria</TaskButton>
+        <span className={styles.hint}>Replaces the acceptance criteria above and returns the agreement to edit. You can still edit the text before reviewing.</span>
+      </div>
+    </div>}
+  </div>;
 }
 
 export default function TaskFormView() {
@@ -155,7 +277,8 @@ function TaskForm() {
                 const name = 'deliverables.' + index + '.' + field;
                 return <FormField key={field} name={name} label={field === 'id' ? 'Unique slug ID' : 'Deliverable title'} error={errors[name]}><input {...fieldProps(name)} value={item[field]} spellCheck={field !== 'id'} onChange={event => updateDeliverable(index, field, event.target.value)} required /></FormField>;
               })}</div>
-              <FormField name={'deliverables.' + index + '.criteria'} label="Acceptance criteria" error={errors['deliverables.' + index + '.criteria']} help="Describe what the worker must deliver. Up to 4,000 Unicode characters."><textarea {...fieldProps('deliverables.' + index + '.criteria', true)} rows={4} value={item.criteria} onChange={event => updateDeliverable(index, 'criteria', event.target.value)} required /></FormField>
+              <FormField name={'deliverables.' + index + '.criteria'} label="Acceptance criteria" error={errors['deliverables.' + index + '.criteria']} help="Describe what the worker must deliver. Up to 4,000 Unicode characters, or structured criteria JSON (criteria-v1)."><textarea {...fieldProps('deliverables.' + index + '.criteria', true)} rows={4} value={item.criteria} onChange={event => updateDeliverable(index, 'criteria', event.target.value)} required /></FormField>
+              <CriteriaDraft index={index} onApply={json => updateDeliverable(index, 'criteria', json)} />
               <div className={styles.policyFields}><FormField name={'deliverables.' + index + '.amount_base_units'} label="Allocation · base units" error={errors['deliverables.' + index + '.amount_base_units']}><input {...fieldProps('deliverables.' + index + '.amount_base_units')} className={styles.mono} inputMode="numeric" value={item.amount_base_units} onChange={event => updateDeliverable(index, 'amount_base_units', event.target.value)} required /></FormField>
                 <FormField name={'deliverables.' + index + '.revision_limit'} label="Revision limit" error={errors['deliverables.' + index + '.revision_limit']}><select {...fieldProps('deliverables.' + index + '.revision_limit')} value={item.revision_limit} onChange={event => updateDeliverable(index, 'revision_limit', event.target.value)}>{[0, 1, 2, 3, 4, 5].map(value => <option value={String(value)} key={value}>{value}</option>)}</select></FormField>
                 <FormField name={'deliverables.' + index + '.review_period_hours'} label="Review period · hours" error={errors['deliverables.' + index + '.review_period_hours']}><input {...fieldProps('deliverables.' + index + '.review_period_hours')} inputMode="numeric" value={item.review_period_hours} onChange={event => updateDeliverable(index, 'review_period_hours', event.target.value)} required /></FormField>

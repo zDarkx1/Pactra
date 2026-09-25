@@ -179,8 +179,14 @@ func deliveryDecode(w http.ResponseWriter, r *http.Request, operation string) (d
 	return in, true
 }
 
-func deliveryRunChecker(ctx context.Context, source map[string]string, artifact json.RawMessage) (*deliveryCheck, error) {
+func deliveryRunChecker(ctx context.Context, source map[string]string, artifact json.RawMessage, criteria string) (*deliveryCheck, error) {
+	policy := "default_metadata_only"
 	rules := deliveryRules{RequiredTerms: []string{}}
+	// Pinned criteria-v1 overrides defaults; legacy prose keeps metadata policy.
+	if c, err := ParseCriteria(criteria); err == nil {
+		policy = "criteria_v1_pinned"
+		rules = RulesFromCriteria(c)
+	}
 	b, err := json.Marshal(struct {
 		Source     map[string]string `json:"source"`
 		Submission json.RawMessage   `json:"submission"`
@@ -201,7 +207,7 @@ func deliveryRunChecker(ctx context.Context, source map[string]string, artifact 
 	if w.Code >= 500 || !json.Valid(w.Body.Bytes()) {
 		return nil, errors.New("checker unavailable")
 	}
-	return &deliveryCheck{Policy: "default_metadata_only", Rules: rules, HTTPStatus: w.Code, Output: json.RawMessage(bytes.TrimSpace(w.Body.Bytes()))}, nil
+	return &deliveryCheck{Policy: policy, Rules: rules, HTTPStatus: w.Code, Output: json.RawMessage(bytes.TrimSpace(w.Body.Bytes()))}, nil
 }
 
 func deliveryLoad(ctx context.Context, tx pgx.Tx, snapshot *deliverySnapshot) error {
@@ -278,9 +284,11 @@ func (s *server) delivery(w http.ResponseWriter, r *http.Request, actor, operati
 		return
 	}
 	limit := -1
+	criteria := ""
 	for _, d := range manifest.Deliverables {
 		if d.ID == deliverable {
 			limit = d.RevisionLimit
+			criteria = d.Criteria
 			break
 		}
 	}
@@ -380,7 +388,7 @@ func (s *server) delivery(w http.ResponseWriter, r *http.Request, actor, operati
 		event.Artifact = in.Artifact
 		digest := sha256.Sum256(in.Artifact)
 		event.ArtifactHash = hex.EncodeToString(digest[:])
-		event.Checker, err = deliveryRunChecker(ctx, manifest.Source, in.Artifact)
+		event.Checker, err = deliveryRunChecker(ctx, manifest.Source, in.Artifact, criteria)
 		if err != nil {
 			fail(w, 503)
 			return

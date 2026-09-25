@@ -98,6 +98,12 @@ func (s *server) manifest(in TaskInput, buyer string, now time.Time) (Manifest, 
 		if len(d.ID) > 64 || !slugRE.MatchString(d.ID) || ids[d.ID] || !bounded(d.Title, 160) || !bounded(d.Criteria, 4000) || !decimalRE.MatchString(d.Amount) || d.RevisionLimit < 0 || d.RevisionLimit > 5 || d.ReviewPeriodHours < 24 || d.ReviewPeriodHours > 168 {
 			return Manifest{}, bad
 		}
+		// Structured criteria must be valid criteria-v1; legacy prose otherwise.
+		if s := strings.TrimSpace(d.Criteria); strings.HasPrefix(s, "{") {
+			if _, err := ParseCriteria(d.Criteria); err != nil {
+				return Manifest{}, bad
+			}
+		}
 		ids[d.ID] = true
 		n, ok := new(big.Int).SetString(d.Amount, 10)
 		if !ok || n.BitLen() > 256 {

@@ -16,6 +16,8 @@ contracts/broadcast/
 .DS_Store
 playwright-report/
 test-results/
+pactra-*.log
+next-*.log
 
 agents/
 */TASK.md

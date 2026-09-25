@@ -28,7 +28,7 @@ export function ConnectWalletScreen({ returnTo }: { returnTo: string }) {
         <p className="mb-3 text-xs font-medium tracking-[0.16em] text-muted uppercase">Your Pactra workspace</p>
         <h1 id="connect-title" className="mb-4 font-serif text-4xl leading-tight tracking-[-0.03em] sm:text-5xl">Connect your wallet</h1>
         <p className="m-0 text-base leading-relaxed text-muted">Connect your wallet, then sign a message to access your agreements, reviews, and workspace.</p>
-        {session.config.enabled && session.config.chain && <p className="mt-6 mb-0 inline-flex items-center gap-2 rounded-full border border-(--hairline) px-3 py-1.5 text-xs text-muted"><Icon name="lock" className="size-3.5" />{session.config.chain.name}</p>}
+        {session.config.enabled && session.config.chain && <p className="mt-6 mb-0 inline-flex items-center gap-2 rounded-full border border-(--hairline) px-3 py-1.5 text-xs text-muted"><img src="/logo-bot.svg" alt="BOT Chain logo" width={14} height={14} className="size-3.5" />{session.config.chain.name} · BOT</p>}
         <div className="mt-8 flex justify-center text-left [&_button]:min-h-12">
           {ready ? <p role="status" className="text-sm text-muted">Opening your workspace…</p> : <WalletControl />}
         </div>

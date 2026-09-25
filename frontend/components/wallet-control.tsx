@@ -1,8 +1,17 @@
 'use client';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useDisconnect } from 'wagmi';
 import { useWorkspace } from './workspace-provider';
 import { Icon } from './ui';
 import { walletStyles as styles } from './wallet-styles';
+
+function WrongNetwork({ onSwitch }: { onSwitch: () => void }) {
+  const { disconnect } = useDisconnect();
+  return <div className={styles.actions}>
+    <button type="button" className={styles.button} onClick={onSwitch}><span>Switch network</span></button>
+    <button type="button" className={styles.account} onClick={() => disconnect()}><span>Disconnect</span></button>
+  </div>;
+}
 
 export function WalletControl() {
   const session = useWorkspace();
@@ -11,7 +20,7 @@ export function WalletControl() {
     <ConnectButton.Custom>{({ account, chain, mounted, openConnectModal, openChainModal, openAccountModal }) => {
       if (!mounted) return <button type="button" className={styles.button} disabled aria-busy="true"><span>Loading wallet…</span></button>;
       if (!account || !chain) return <button type="button" className={styles.button} onClick={openConnectModal}><span><Icon name="wallet" />Connect wallet</span></button>;
-      if (chain.unsupported || chain.id !== session.config.chain?.id) return <button type="button" className={styles.button} onClick={openChainModal}><span>Switch network</span></button>;
+      if (chain.unsupported || chain.id !== session.config.chain?.id) return <WrongNetwork onSwitch={openChainModal} />;
       return <div className={styles.actions}>
         <button type="button" className={styles.account} onClick={openAccountModal} aria-label={'Wallet ' + account.address}><span><Icon name="wallet" /><span className={styles.accountName}>{account.displayName}</span></span></button>
         {session.status === 'signedIn'

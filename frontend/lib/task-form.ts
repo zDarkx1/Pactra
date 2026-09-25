@@ -1,4 +1,5 @@
 import type { Deliverable, Manifest } from './workspace-types.ts';
+import { parseCriteria } from './criteria.ts';
 
 export const UINT256_MAX = (BigInt(1) << BigInt(256)) - BigInt(1);
 export const TASK_BODY_LIMIT = 64 * 1024;
@@ -144,7 +145,7 @@ export function validateTaskDraft(draft: TaskDraft, buyer: string, arbiters: rea
     else if (ids.has(item.id)) errors[prefix + '.id'] = 'Each deliverable needs a unique ID.';
     ids.add(item.id);
     if (!bounded(item.title, 160)) errors[prefix + '.title'] = 'Enter a nonblank title of at most 160 Unicode characters, without NUL.';
-    if (!bounded(item.criteria, 4000)) errors[prefix + '.criteria'] = 'Enter nonblank acceptance criteria, up to 4,000 Unicode characters, without NUL.';
+    try { parseCriteria(item.criteria); } catch (error) { errors[prefix + '.criteria'] = (error as Error).message; }
     if (!/^[1-9][0-9]{0,77}$/.test(item.amount_base_units) || BigInt(item.amount_base_units) > UINT256_MAX) {
       errors[prefix + '.amount_base_units'] = 'Use a positive uint256 integer string, without leading zeros or decimals.';
     } else total += BigInt(item.amount_base_units);

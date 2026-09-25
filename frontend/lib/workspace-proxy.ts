@@ -4,6 +4,7 @@ import { BodyTooLarge, readBoundedBody } from './bounded-body.ts';
 import { appOrigin, getPublicWorkspaceConfig } from './workspace-config.ts';
 import { parseTask, uuidPattern, walletAddressPattern } from './workspace-types.ts';
 import { parseAdvisoryReview, parseTaskPage, workspaceQuery, workspaceRoute } from './workspace-path.ts';
+import { parseCriteriaDraftResponse } from './criteria.ts';
 
 const sessionCookie = 'pactra_session';
 const challengeCookie = 'pactra_challenge';
@@ -40,7 +41,7 @@ async function upstream(path: string, method: string, token: string, body?: stri
   if (body !== undefined) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', 'Bearer ' + token);
   if (idempotencyKey !== undefined) headers.set('Idempotency-Key', idempotencyKey);
-  return fetch(new URL('/api/v1/' + path, base.origin), { method, headers, body, signal: AbortSignal.timeout(path === 'review' || path.includes('/onchain') || path.includes('/deliverables/') || path.startsWith('onchain/') || path.startsWith('arbiter/') ? 35000 : 10000), redirect: 'error', cache: 'no-store', credentials: 'omit' });
+  return fetch(new URL('/api/v1/' + path, base.origin), { method, headers, body, signal: AbortSignal.timeout(path === 'review' || path === 'criteria/draft' || path.includes('/onchain') || path.includes('/deliverables/') || path.startsWith('onchain/') || path.startsWith('arbiter/') ? 35000 : 10000), redirect: 'error', cache: 'no-store', credentials: 'omit' });
 }
 async function data(response: Response, limit = 4 * 1024 * 1024): Promise<unknown> {
   if (response.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') throw new Error('Invalid response content type.');
@@ -52,7 +53,13 @@ function memberAddress(value: unknown) {
 }
 async function forwardFailure(response: Response) {
   await response.body?.cancel();
-  return failure([400, 401, 403, 404, 409, 413, 415, 429, 503, 504].includes(response.status) ? response.status : 502);
+  const status = [400, 401, 403, 404, 409, 413, 415, 429, 503, 504].includes(response.status) ? response.status : 502;
+  const result = failure(status);
+  if (status === 429) {
+    const retry = response.headers.get('retry-after')?.trim() || '';
+    if (/^\d{1,4}$/.test(retry)) result.headers.set('Retry-After', retry);
+  }
+  return result;
 }
 export async function handleWorkspaceRequest(request: Request, segments: string[]): Promise<Response> {
   let origin: URL;
@@ -67,6 +74,7 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
   if (request.headers.get('sec-fetch-site') === 'cross-site') return failure(403);
   if (!read && request.headers.get('origin') !== origin.origin) return failure(403);
   if (route.kind === 'review' && process.env.PACTRA_PUBLIC_AI_ENABLED !== 'true') return failure(503, 'AI review is disabled. Deterministic checks remain available.');
+  if (route.kind === 'criteriaDraft' && process.env.PACTRA_PUBLIC_AI_ENABLED !== 'true') return failure(503, 'AI criteria draft is disabled. Enter criteria manually; deterministic checks remain available.');
   let query: string;
   try { query = workspaceQuery(route, request.method, new URL(request.url).search); } catch { return failure(400); }
   const idempotencyKey = request.headers.get('idempotency-key');
@@ -78,7 +86,7 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
   if (!read) {
     if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return failure(415);
     try {
-      body = await readBoundedBody(request.body, (route.kind === 'review' ? 16 : 64) * 1024);
+      body = await readBoundedBody(request.body, (route.kind === 'review' || route.kind === 'criteriaDraft' ? 16 : 64) * 1024);
       const parsed: unknown = JSON.parse(body);
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return failure(400);
       input = parsed as Record<string, unknown>;
@@ -140,7 +148,7 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
     if (path === 'me') return json({ address });
     const response = await upstream(path + query, request.method, token, body, idempotencyKey ?? undefined);
     if (![200, 201].includes(response.status)) return forwardFailure(response);
-    const value = await data(response, route.kind === 'review' ? 256 * 1024 : undefined);
+    const value = await data(response, route.kind === 'review' || route.kind === 'criteriaDraft' ? 256 * 1024 : undefined);
     if (route.kind === 'settlement' || route.kind === 'arbiterQueue') return json(parseSettlementResponse('/' + path, value), response.status);
     if (path === 'tasks' && read) {
       return json(parseTaskPage(value));
@@ -152,6 +160,7 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
       return json(delivery, response.status);
     }
     if (route.kind === 'review') return json(parseAdvisoryReview(value, input));
+    if (route.kind === 'criteriaDraft') return json(parseCriteriaDraftResponse(value));
     return json(parseTask(value), response.status);
   } catch (error) {
     return failure(error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name) ? 504 : 502);

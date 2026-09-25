@@ -89,6 +89,12 @@ func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) 
 			w.WriteHeader(503)
 			_, _ = w.Write([]byte(`{"error":"Authenticated workspace and explicit AI budgets are required"}`))
 		})
+		mux.HandleFunc("/api/v1/criteria/draft", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Cache-Control", "no-store")
+			w.WriteHeader(503)
+			_, _ = w.Write([]byte(`{"error":"Authenticated workspace and explicit AI budgets are required"}`))
+		})
 		return mux, func() {}, nil
 	}
 	cfg.AIHandler = fallback
@@ -155,6 +161,7 @@ func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) 
 	mux.Handle("/api/v1/arbiter/", h)
 	mux.Handle("/api/v1/onchain/", h)
 	mux.Handle("/api/v1/review", h)
+	mux.Handle("/api/v1/criteria/draft", h)
 	mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
 		c, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()

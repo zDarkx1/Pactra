@@ -35,6 +35,10 @@ export default function HomePage() {
             " relative flex min-h-[680px] flex-col items-center justify-center py-20 text-center lg:min-h-[760px] lg:py-24"
           }
         >
+          <p className="mx-auto mb-7 inline-flex items-center gap-2 rounded-full border border-(--hairline) px-3 py-1.5 text-xs text-muted">
+            <img src="/logo-bot.svg" alt="BOT Chain logo" width={28} height={28} className="size-7" />
+            Built for BOT Chain
+          </p>
           <h1 className="mx-auto mb-7 max-w-[1040px] text-[clamp(3.15rem,7.5vw,7rem)] leading-[.99] font-medium tracking-[-.065em]">
             Good work starts
             <br />
@@ -198,7 +202,7 @@ export default function HomePage() {
           </div>
           <div className="flex flex-col justify-between gap-6 pt-7 sm:flex-row">
             <p className="m-0 text-xs text-[#b0aea5]">
-              Built by allevi.dev. For work worth agreeing on.
+              Built by allevi.dev. For work worth agreeing on. BOT Chain submission.
             </p>
             <nav
               aria-label="Footer resources"

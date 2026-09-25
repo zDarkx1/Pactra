@@ -143,6 +143,18 @@ func TestAIRedirectTimeoutAndRate(t *testing.T) {
 		t.Fatal(w.Code, w.Header())
 	}
 }
+func TestAIProviderRetryAfterForwarded(t *testing.T) {
+	for hint, want := range map[string]string{"45": "45", "5": "10", "999999": "120", "soon": "10"} {
+		h := testAI(t, func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Retry-After", hint)
+			w.WriteHeader(429)
+		})
+		w := reviewCall(h, valid)
+		if w.Code != 429 || w.Header().Get("Retry-After") != want {
+			t.Fatalf("hint %s: %d %s", hint, w.Code, w.Header().Get("Retry-After"))
+		}
+	}
+}
 func TestAIConcurrencyCooldown(t *testing.T) {
 	entered, release := make(chan struct{}), make(chan struct{})
 	var calls atomic.Int32

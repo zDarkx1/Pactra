@@ -9,6 +9,7 @@ import type { Deliverable, Task } from '../../lib/workspace-types';
 import type { ChainBinding } from '../../lib/onchain-types';
 import { buildDeliveryIntent, deliveryRevisionsRemaining, type DeliveryAction, type DeliveryHistory, type DeliveryIntent, type DeliverySubmission } from '../../lib/delivery-types';
 import { SessionExpired, TaskTime, taskErrorStatus } from './task-shared';
+import { CriteriaView } from './manifest-details';
 import styles from './task-styles';
 
 const stateLabels = { not_submitted: 'No submission', submitted: 'Awaiting buyer review', revision_requested: 'Revision requested', accepted: 'Accepted by buyer', disputed: 'Disputed · review frozen' };
@@ -174,7 +175,7 @@ function DeliverableReview({ task, deliverable, role }: { task: Task; deliverabl
   }
   return <section className={styles.section} aria-labelledby={heading}>
     <div className={styles.sectionHeading}><h3 id={heading}>{deliverable.title}</h3><button type="button" className={styles.secondary} disabled={review.busy || confirmation !== null} onClick={() => void review.reload()}><Icon name="refresh" />Read current review</button></div>
-    <p className={styles.criteria}>{deliverable.criteria}</p>
+    <CriteriaView criteria={deliverable.criteria} manifestHash={h ? h.manifest_hash : task.manifest_hash} />
     <div ref={feedback} tabIndex={-1} className={review.error || review.feedback || inputError ? styles.notice : styles.srOnly} role={review.error || inputError ? 'alert' : 'status'}>
       {inputError || review.error}{review.feedback && <p>{review.feedback}</p>}
     </div>
