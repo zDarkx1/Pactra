@@ -49,7 +49,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3">
             <Link
-              href="/tasks"
+              href="/connect"
               className="group inline-flex min-h-12 items-center gap-6 rounded-full bg-ink px-7 text-sm text-canvas no-underline transition-colors hover:bg-[#a9583e]"
             >
               Open workspace

@@ -5,6 +5,7 @@ import CheckerWorkbench from './workbench';
 export const metadata: Metadata = {
   title: 'Localization checker',
   description: 'Check localization JSON and compare exact source and submission evidence. Deterministic checks do not replace human review.',
+  robots: { index: false, follow: false },
 };
 
 export default function CheckerPage() {

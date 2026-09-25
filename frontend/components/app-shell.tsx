@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { canAnimate, runMotion, type MotionHandle } from "../lib/motion";
 import { WalletControl } from "./wallet-control";
+import { WorkspaceGate } from "./workspace-gate";
 import { Icon } from "./ui";
 import { Dialog, Tooltip } from "radix-ui";
 import { shellStyles as styles } from "./shell-styles";
@@ -154,10 +155,16 @@ function MobileNavigation() {
 }
 
 export function PublicHeader() {
-  return <header className={styles.publicHeader}><div className={styles.publicHeaderInner}><Wordmark /><nav className={styles.publicNavigation} aria-label="Main"><Link href="/#agreement">Agreements</Link><Link href="/checker">Checker</Link></nav><div className={styles.headerActions}><Link className={styles.headerWorkspace} href="/tasks">Open workspace <Icon name="arrow-up-right" /></Link><MobileNavigation /></div></div></header>;
+  return <header className={styles.publicHeader}><div className={styles.publicHeaderInner}><Wordmark /><nav className={styles.publicNavigation} aria-label="Main"><Link href="/#agreement">Agreements</Link><Link href="/checker">Checker</Link></nav><div className={styles.headerActions}><Link className={styles.headerWorkspace} href="/connect">Open workspace <Icon name="arrow-up-right" /></Link><MobileNavigation /></div></div></header>;
 }
 
-export default function AppShell({ children, title, description }: { children: ReactNode; title?: string; description?: string }) {
+type AppShellProps = { children: ReactNode; title?: string; description?: string };
+
+export default function AppShell(props: AppShellProps) {
+  return <WorkspaceGate><WorkspaceShell {...props} /></WorkspaceGate>;
+}
+
+function WorkspaceShell({ children, title, description }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [sidebarMotion, setSidebarMotion] = useState<'instant' | 'pointer'>('instant');
   const workspaceElement = useRef<HTMLDivElement>(null);

@@ -16,7 +16,7 @@ function publicUrl(raw: string | undefined): string {
   return url.toString();
 }
 export function getPublicWorkspaceConfig(environment: Record<string, string | undefined> = process.env): PublicWorkspaceConfig {
-  const disabled: PublicWorkspaceConfig = { enabled: false, reason: 'Wallet sign-in awaits team network configuration. The localization checker is available without a wallet.', chain: null, walletConnectProjectId: null, arbiters: [] };
+  const disabled: PublicWorkspaceConfig = { enabled: false, reason: 'Wallet sign-in awaits team network configuration.', chain: null, walletConnectProjectId: null, arbiters: [] };
   try {
     appOrigin(environment);
     const id = Number(environment.PACTRA_CHAIN_ID);

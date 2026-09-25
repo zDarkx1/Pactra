@@ -6,11 +6,18 @@ JSON checks. The implemented task lifecycle ends at accepted_unfunded. No funds 
 ## Pages
 
 - /: public product introduction with a labelled synthetic evidence preview.
-- /checker: standalone checker, per-key evidence, optional local-only AI review.
+- /connect: dedicated wallet connection and message sign-in before entering the workspace.
+- /checker: wallet-gated checker, per-key evidence, optional local-only AI review.
 - /tasks: private task list, buyer/worker and status filters, latest-50 limit.
 - /tasks/new: draft, review all terms, then create an invitation.
 - /tasks/[id]: full manifest, exact server hash, role-based acceptance/cancellation.
 - /dashboard: redirect to /tasks.
+
+Open Pactra and the main workspace buttons lead to /connect. All workspace pages
+hide their shell and content until the wallet has an authenticated session. Direct
+links return to their original workspace destination after sign-in; disconnecting,
+changing account/network, or losing the session returns to /connect. Public landing
+content and the journal remain accessible without a wallet.
 
 Wallet UI uses RainbowKit, wagmi, viem, and TanStack Query. Fonts are self-hosted
 through Fontsource. Styling follows DESIGN.md; implementation scope lives in TASK.md.
@@ -68,7 +75,7 @@ Do not expose Go's local AI endpoint publicly before authenticated durable budge
 No AI/provider request or funded transaction is part of frontend verification.
 
 Indexing defaults off. Set PACTRA_PUBLIC_INDEXING=true only after public release
-approval and a valid canonical origin. Sitemap includes only / and /checker;
+approval and a valid canonical origin. Sitemap includes only /;
 private routes use noindex and API responses use no-store. Robots is not authorization.
 
 ## Checks and remaining gates

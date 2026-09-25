@@ -50,7 +50,7 @@ Terminal 2 (repository root):
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. Click **Run checks** with the supplied example, then use the corrected example and run again. Calls go through Next.js to Go at http://127.0.0.1:8080. See [local development](docs/DEVELOPMENT.md) for environment files and Windows instructions.
+Open http://localhost:3000. **Open Pactra** leads to the wallet connection page; configure the wallet network and backend session service, then connect and sign in to enter the workspace. The public landing preview remains available without a wallet. Calls go through Next.js to Go at http://127.0.0.1:8080. See [local development](docs/DEVELOPMENT.md) for environment files and Windows instructions.
 
 ## Repository map
 

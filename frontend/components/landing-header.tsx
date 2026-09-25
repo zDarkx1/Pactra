@@ -188,7 +188,7 @@ export function LandingHeader() {
             </NavigationMenu.Item>
             <NavigationMenu.Item>
               <NavigationMenu.Link asChild onSelect={(event) => event.preventDefault()}>
-                <Link href="/tasks" onClick={navigate} className="ml-3 flex min-h-11 items-center gap-5 rounded-lg bg-ink px-4 text-sm text-canvas no-underline transition-colors hover:bg-[#3d3d3a] motion-reduce:transition-none">Open Pactra<ArrowRight aria-hidden size={16} /></Link>
+                <Link href="/connect" onClick={navigate} className="ml-3 flex min-h-11 items-center gap-5 rounded-lg bg-ink px-4 text-sm text-canvas no-underline transition-colors hover:bg-[#3d3d3a] motion-reduce:transition-none">Open Pactra<ArrowRight aria-hidden size={16} /></Link>
               </NavigationMenu.Link>
             </NavigationMenu.Item>
           </NavigationMenu.List>
@@ -235,7 +235,7 @@ export function LandingHeader() {
                 <Link href="/#release" onClick={navigate} className="flex min-h-16 items-center border-b border-[var(--hairline)] font-serif text-2xl text-ink no-underline">Updates</Link>
               </nav>
               <div className="mt-auto flex shrink-0 flex-col gap-3 pt-8">
-                <Link href="/tasks" onClick={navigate} className="flex min-h-11 items-center justify-center rounded-lg bg-[#a9583e] px-5 py-3 text-center text-white no-underline">Open workspace</Link>
+                <Link href="/connect" onClick={navigate} className="flex min-h-11 items-center justify-center rounded-lg bg-[#a9583e] px-5 py-3 text-center text-white no-underline">Open workspace</Link>
                 <Link href="/checker" onClick={navigate} className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--hairline)] px-5 py-3 text-center text-ink no-underline">Try the checker</Link>
               </div>
             </Dialog.Content>
