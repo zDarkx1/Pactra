@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { canAnimate, runMotion, type MotionHandle } from "../lib/motion";
 import { WalletControl } from "./wallet-control";
 import { Icon } from "./ui";
-import { Button as AriaButton, Link as AriaLink, TooltipTrigger, Tooltip, DialogTrigger, ModalOverlay, Modal, Dialog } from "react-aria-components";
+import { Dialog, Tooltip } from "radix-ui";
 import { shellStyles as styles } from "./shell-styles";
 
 const destinations = [
@@ -19,13 +19,12 @@ function Wordmark({ compact = false }: { compact?: boolean }) {
 }
 
 function SidebarLink({href,label,icon,compact=false,current=false,className,onNavigate}:{href:string;label:string;icon:"tasks"|"checker"|"plus";compact?:boolean;current?:boolean;className:string;onNavigate?:(href:string)=>void}) {
-  const content=<AriaLink href={href} aria-label={compact?label:undefined} aria-current={current?"page":undefined} className={className}
-    render={domProps=> 'href' in domProps ? <Link {...domProps} href={href} onClick={event=>{
+  const content=<Link href={href} aria-label={compact?label:undefined} aria-current={current?"page":undefined} className={className} onClick={event=>{
       // Preserve normal anchors, modified clicks and Next client navigation.
-      domProps.onClick?.(event);
+
       if(!event.defaultPrevented&&event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey)onNavigate?.(href);
-    }}/> : <span {...domProps}/> }><Icon name={icon}/><span className={compact?"sr-only":undefined}>{label}</span></AriaLink>;
-  return compact?<TooltipTrigger delay={250} closeDelay={0}>{content}<Tooltip placement="right" offset={12} className="z-100 rounded-lg bg-ink px-3 py-2 text-xs text-canvas shadow-lg">{label}</Tooltip></TooltipTrigger>:content;
+    }}><Icon name={icon}/><span className={compact?"sr-only":undefined}>{label}</span></Link>;
+  return compact ? <Tooltip.Provider delayDuration={250}><Tooltip.Root><Tooltip.Trigger asChild>{content}</Tooltip.Trigger><Tooltip.Portal><Tooltip.Content side="right" sideOffset={12} className={styles.tooltip}>{label}</Tooltip.Content></Tooltip.Portal></Tooltip.Root></Tooltip.Provider> : content;
 }
 function Navigation({ onNavigate, compact = false }: { onNavigate?: (href: string) => void; compact?: boolean }) {
   const pathname = usePathname();
@@ -43,12 +42,11 @@ function MobileNavigation() {
   const focusDestination = useRef<string | null>(null);
   const focusFrame = useRef<number | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const labelId = useId();
-  const dialogId = useId();
+
 
   function focusMain() {
     if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current);
-    // Run after RAC removes its focus scope and restores the trigger.
+    // Run after Radix removes its focus scope and restores the trigger.
     focusFrame.current = requestAnimationFrame(() => {
       document.getElementById('main-content')?.focus({ preventScroll: true });
       focusFrame.current = null;
@@ -78,7 +76,7 @@ function MobileNavigation() {
     const duration = Number.parseFloat(style.getPropertyValue('--duration-panel')) || 220;
     const easing = style.getPropertyValue('--ease-out').trim() || 'ease-out';
     if (backdrop.current) backdropMotion.current = runMotion(backdrop.current, [{ backgroundColor: 'rgb(20 20 19 / 36%)' }, { backgroundColor: 'rgb(20 20 19 / 0%)' }], { duration, easing, fill: 'both' });
-    // Keep RAC open throughout exit motion: focus trapping and scroll lock remain active.
+    // Keep Radix open throughout exit motion: focus trapping and scroll lock remain active.
     motion.current = runMotion(element, [from, { transform: 'translateX(-100%)', opacity: 0.8 }], { duration, easing, fill: 'both' }, finishClose);
   }
   function navigate(href: string, event?: MouseEvent<HTMLAnchorElement>) {
@@ -87,9 +85,9 @@ function MobileNavigation() {
     if (focusDestination.current) window.dispatchEvent(new CustomEvent('pactra:focus-main', { detail: href }));
     close(false);
   }
-  useLayoutEffect(() => {
-    const element = panel.current;
-    if (!expanded || !element) return;
+  function mountPanel(element: HTMLDivElement | null) {
+    panel.current = element;
+    if (!element) return;
     const animated = canAnimate(pointerIntent.current, window.matchMedia('(prefers-reduced-motion: reduce)').matches, document.hidden);
     element.dataset.state = 'open';
     element.dataset.motion = animated ? 'pointer' : 'instant';
@@ -100,7 +98,7 @@ function MobileNavigation() {
       motion.current = runMotion(element, [{ transform: 'translateX(-100%)', opacity: 0.8 }, { transform: 'translateX(0)', opacity: 1 }], { duration, easing });
       if (backdrop.current) backdropMotion.current = runMotion(backdrop.current, [{ backgroundColor: 'rgb(20 20 19 / 0%)' }, { backgroundColor: 'rgb(20 20 19 / 36%)' }], { duration, easing });
     }
-  }, [expanded]);
+  }
   useEffect(() => {
     if (phase.current !== 'closed') close(false);
     if (focusDestination.current === pathname) focusMain();
@@ -136,22 +134,22 @@ function MobileNavigation() {
       document.removeEventListener('visibilitychange', settle);
     };
   }, []);
-  return <DialogTrigger isOpen={expanded} onOpenChange={open => {
+  return <Dialog.Root open={expanded} onOpenChange={open => {
     if (open) { phase.current = 'open'; setExpanded(true); }
     else close(pointerIntent.current);
   }}>
-    <AriaButton className={styles.menuButton} type="button" aria-label="Open navigation" aria-haspopup="dialog" aria-expanded={expanded} aria-controls={dialogId} onPressStart={event => { pointerIntent.current = event.pointerType !== 'keyboard' && event.pointerType !== 'virtual'; }}><Icon name="menu" /></AriaButton>
-    <ModalOverlay className={styles.overlay} ref={backdrop} isDismissable render={domProps => <div {...domProps} onPointerDownCapture={() => { pointerIntent.current = true; }} onKeyDownCapture={() => { pointerIntent.current = false; }} />}>
-      <Modal className={styles.drawer} ref={panel} data-state="open" data-motion="instant">
-        <Dialog id={dialogId} className={styles.dialog} aria-labelledby={labelId}>
-          <div className={styles.drawerHeader}><h2 id={labelId}>Workspace</h2><AriaButton className={styles.iconButton} type="button" aria-label="Close navigation" autoFocus onPress={event => close(event.pointerType !== 'keyboard' && event.pointerType !== 'virtual')}><Icon name="close" /></AriaButton></div>
+    <Dialog.Trigger asChild><button className={styles.menuButton} type="button" aria-label="Open navigation" onPointerDown={() => { pointerIntent.current = true; }} onKeyDown={() => { pointerIntent.current = false; }}><Icon name="menu" /></button></Dialog.Trigger>
+    <Dialog.Portal>
+      <Dialog.Overlay className={styles.overlay} ref={backdrop} />
+      <Dialog.Content className={`${styles.drawer} ${styles.dialog}`} ref={mountPanel} data-motion="instant" onEscapeKeyDown={event => { event.preventDefault(); close(false); }} onPointerDownOutside={event => { event.preventDefault(); close(true); }} onCloseAutoFocus={event => { if (focusDestination.current) event.preventDefault(); }}>
+          <div className={styles.drawerHeader}><Dialog.Title>Workspace</Dialog.Title><button className={styles.iconButton} type="button" aria-label="Close navigation" autoFocus onClick={event => close(event.detail > 0)}><Icon name="close" /></button></div>
+          <Dialog.Description className="sr-only">Navigate your agreements or open the public JSON checker.</Dialog.Description>
           <Navigation onNavigate={href => navigate(href)} />
           <SidebarLink href="/tasks/new" label="New agreement" icon="plus" className={styles.sidebarCreate} onNavigate={href=>navigate(href)}/>
           <div className={styles.drawerFooter}><Link href="/" onClick={event => navigate('/', event)}>Back to Pactra <Icon name="arrow-up-right" /></Link><p>Private agreements. Inspectable evidence.<br />No funds move in this release.</p></div>
-        </Dialog>
-      </Modal>
-    </ModalOverlay>
-  </DialogTrigger>;
+      </Dialog.Content>
+    </Dialog.Portal>
+  </Dialog.Root>;
 }
 
 export function PublicHeader() {
@@ -215,7 +213,7 @@ export default function AppShell({ children, title, description }: { children: R
     <aside id="workspace-sidebar" className={styles.sidebar} aria-label="Workspace sidebar"><div className={styles.sidebarSurface} aria-hidden="true" /><div className={styles.sidebarContent}><Wordmark compact={collapsed} /><div className={styles.workspaceLabel} aria-hidden={collapsed || undefined}>{collapsed ? ' ' : 'Workspace'}</div><Navigation compact={collapsed} /><SidebarLink href="/tasks/new" label="New agreement" icon="plus" className={styles.sidebarCreate} compact={collapsed}/><div className={styles.sidebarNote} hidden={collapsed}><span className={styles.releaseLabel}><Icon name="info" />Current release</span><p>Agree on terms and check files. Funding and payouts are not available.</p><Link href="/">About Pactra <Icon name="arrow-up-right" /></Link></div></div></aside>
     <div className={styles.workspace} ref={workspaceElement}>
       <header className={styles.topbar}>
-        <div className={styles.topbarLocation}><AriaButton className={styles.sidebarToggle} type="button" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} render={domProps => <button {...domProps} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} />} aria-expanded={!collapsed} aria-controls="workspace-sidebar" onPress={event => toggleSidebar(event.pointerType !== 'keyboard' && event.pointerType !== 'virtual')}><Icon name="panel-left" /></AriaButton><nav className={styles.desktopContext} aria-label="Breadcrumb"><span>Workspace</span><Icon name="chevron-right" />{detail ? <><Link href="/tasks">Agreements</Link><Icon name="chevron-right" /><span aria-current="page">{detail}</span></> : <span aria-current="page">{section}</span>}</nav></div>
+        <div className={styles.topbarLocation}><button className={styles.sidebarToggle} type="button" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!collapsed} aria-controls="workspace-sidebar" onClick={event => toggleSidebar(event.detail > 0)}><Icon name="panel-left" /></button><nav className={styles.desktopContext} aria-label="Breadcrumb"><span>Workspace</span><Icon name="chevron-right" />{detail ? <><Link href="/tasks">Agreements</Link><Icon name="chevron-right" /><span aria-current="page">{detail}</span></> : <span aria-current="page">{section}</span>}</nav></div>
         <div className={styles.mobileBrand}><Wordmark /></div>
         <div className={styles.headerActions}><WalletControl /><MobileNavigation /></div>
       </header>

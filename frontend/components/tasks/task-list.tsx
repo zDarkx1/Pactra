@@ -59,7 +59,7 @@ function TaskList() {
       <p id="task-list-scope">Search and filters apply to loaded tasks. Load more to include older agreements; refreshing starts again with the newest page.</p>
     </div>
     {error != null && <div className={[shared.errorBox, styles.error].join(' ')} role="alert"><strong>Could not load tasks</strong><p>{taskErrorMessage(error)}</p>{data && <p>The list shown is from the last successful read.</p>}<TaskButton type="button" className={shared.secondary} disabled={loading} onClick={() => void reload()}>Refresh from first page</TaskButton></div>}
-    {loading && !data ? <TaskLoading /> : data && <section aria-label="Loaded tasks" aria-busy={loading}>
+    {loading && !data ? <TaskLoading /> : data && <section className="grid min-w-0 gap-4" aria-label="Loaded tasks" aria-busy={loading}>
       <div className={styles.results}>
         <p role="status" aria-live="polite">{loading ? loadingMore ? 'Loading older tasks…' : 'Refreshing tasks…' : visible.length + ' shown of ' + tasks.length + ' loaded'}</p>
         {hasFilters && visible.length > 0 && <TaskButton type="button" className={styles.clear} onClick={clearFilters}>Clear filters</TaskButton>}

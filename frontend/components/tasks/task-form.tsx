@@ -8,7 +8,7 @@ import { useWorkspace } from '../workspace-provider';
 import { createTaskAttempt } from '../../lib/workspace-client';
 import { deadlineToUtc, isTaskAddress, newDeliverable, newTaskDraft, validateTaskDraft, type DeliverableDraft, type TaskDraft, type TaskFormErrors, type TaskValidation } from '../../lib/task-form';
 import { ManifestDetails } from './manifest-details';
-import { TaskButton, SessionExpired, TaskSession, taskErrorMessage, taskErrorStatus } from './task-shared';
+import { TaskButton, SessionExpired, TaskSession, WorkspaceConfirmation, taskErrorMessage, taskErrorStatus } from './task-shared';
 import styles from './task-styles';
 
 function FormField({ name, label, help, error, children }: { name: string; label: string; help?: string; error?: string; children: ReactNode }) {
@@ -29,6 +29,7 @@ function TaskForm() {
   const [uncertain, setUncertain] = useState(false);
   const [serverError, setServerError] = useState('');
   const [expired, setExpired] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [animatedRow, setAnimatedRow] = useState<number | null>(null);
   const errorSummary = useRef<HTMLDivElement>(null);
   const reviewHeading = useRef<HTMLHeadingElement>(null);
@@ -112,7 +113,15 @@ function TaskForm() {
     <Link className={styles.textLink} href="/tasks"><Icon name="arrow-left" />All agreements</Link>
     <p className={styles.intro}>Define the work, then review the full agreement before inviting the worker.</p>
     <p className={styles.notice}>Creating a task sends an immutable invitation. It does not deposit funds. Your draft stays only in this page’s memory and is cleared when you leave or switch sessions.</p>
-    {blocked && <div className={styles.errorBox} role="alert"><h2>Task creation unavailable</h2><p>{!config.chain ? 'No workspace chain is configured.' : allowed.length === 0 ? 'The official arbiter allowlist is empty. The operator must configure it before tasks can be created.' : 'At least two different official arbiters are required. Ask the operator to complete the allowlist.'}</p></div>}
+    {blocked && <section className={styles.setupPanel} aria-labelledby="arbiter-setup-heading">
+      <span className={styles.accessLabel}><Icon name="info" />Operator setup needed</span>
+      <h2 id="arbiter-setup-heading">Agreement creation awaiting arbiter setup</h2>
+      <p>Before invitations can be created, the operator must obtain two distinct, real, consenting team arbiter wallet addresses: one primary and one backup. Both must be nonzero EVM addresses and different from the buyer and worker.</p>
+      <p>Set <code>PACTRA_ARBITERS</code> to those comma-separated addresses in both the frontend and backend configuration, with matching allowlists, then restart the services. Do not use example or test wallets.</p>
+      {!config.chain && <p>The operator must also configure the workspace chain to match the backend.</p>}
+      <p className={styles.hint}>The form stays disabled until setup is complete. The server still validates every invitation.</p>
+      <Link className={styles.textLink} href="/checker"><Icon name="checker" />Use the JSON checker while you wait<Icon name="arrow-right" /></Link>
+    </section>}
     <div ref={errorSummary} tabIndex={-1} role={Object.keys(errors).length || serverError ? 'alert' : undefined} className={Object.keys(errors).length || serverError ? styles.errorBox : styles.srOnly}>
       {Object.keys(errors).length > 0 && <><h2>Check these fields</h2><ul>{Object.entries(errors).map(([name, message]) => <li key={name}>{name === '_form' ? message : <a href={'#' + name} onClick={event => { event.preventDefault(); document.getElementById(name)?.focus(); }}>{message}</a>}</li>)}</ul></>}
       {serverError && <p>{serverError}</p>}
@@ -122,7 +131,10 @@ function TaskForm() {
       <div className={styles.sectionHeading}><h2 ref={reviewHeading} tabIndex={-1}>Review before creating</h2><span className={styles.hint}>{uncertain ? 'Creation not yet confirmed' : pending ? 'Sending' : 'Not yet sent'}</span></div>
       <ManifestDetails terms={review.input} buyer={address.toLowerCase()} chainId={config.chain.id} total={review.total} />
       <p className={styles.notice}>The server assigns the task ID, invitation expiry, and terms fingerprint after creation. The worker must separately accept that exact fingerprint.</p>
-      <div className={styles.actions}><TaskButton type="button" className={styles.secondary} disabled={pending || uncertain} onClick={() => { if (mutation.current || uncertain) return; focusNext.current = 'title'; setReview(null); setServerError(''); }}>Back to edit</TaskButton><TaskButton type="button" className={styles.primary} disabled={pending || blocked} onClick={() => void createTask()}>{pending ? 'Creating invitation…' : uncertain ? 'Retry same invitation' : 'Create invitation'}</TaskButton><span className={styles.hint} role="status">{pending ? 'Waiting for the server. Please do not submit again.' : uncertain ? 'Same key and terms retained in memory. Edits remain locked.' : 'No funds will move.'}</span></div>
+      <div className={styles.actions}><TaskButton type="button" className={styles.secondary} disabled={pending || uncertain} onClick={() => { if (mutation.current || uncertain) return; focusNext.current = 'title'; setReview(null); setServerError(''); }}>Back to edit</TaskButton><TaskButton type="button" className={styles.primary} disabled={pending || blocked} aria-busy={pending} onClick={() => { if (uncertain) void createTask(); else setConfirming(true); }}>{pending ? 'Creating invitation…' : uncertain ? 'Retry same invitation' : 'Create invitation'}</TaskButton><span className={styles.hint} role="status">{pending ? 'Waiting for the server. Please do not submit again.' : uncertain ? 'Same key and terms retained in memory. Edits remain locked.' : 'No funds will move.'}</span></div>
+      {confirming && <WorkspaceConfirmation title="Create this invitation?" description="The reviewed terms will become immutable and visible to the invited worker. The worker must separately accept them." acknowledgement="I have reviewed these exact terms and understand that this creates an unfunded invitation. No deposit or payout occurs." confirmLabel="Confirm invitation" onDismiss={() => setConfirming(false)} onConfirm={acknowledged => { if (!acknowledged) return; setConfirming(false); void createTask(); }}>
+        <p className={styles.notice}>Reviewing or creating an invitation does not move funds.</p>
+      </WorkspaceConfirmation>}
     </div> : <form className={styles.form} onSubmit={reviewTerms} noValidate autoComplete="off">
       <fieldset disabled={blocked || pending || uncertain} className={styles.formBody}><legend className={styles.srOnly}>New task terms</legend>
         <section className={styles.section} aria-labelledby="work-heading"><h2 id="work-heading">The work</h2><div className={styles.stack}>

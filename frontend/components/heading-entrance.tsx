@@ -19,7 +19,7 @@ export function HeadingEntrance() {
             ...document.querySelectorAll<HTMLElement>("main h1, main h2"),
           ].filter((e) => {
             const r = e.getBoundingClientRect();
-            return r.top < innerHeight && r.bottom > 0;
+            return !e.closest("[data-expand-scene], [data-scope-story]") && r.top < innerHeight && r.bottom > 0;
           });
           gsap.fromTo(
             visible,
