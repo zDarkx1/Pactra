@@ -87,7 +87,11 @@ func (s *server) deliveryRoute(operation string, read bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		timeout := 5 * time.Second
+		if s.cfg.Onchain != nil {
+			timeout = 35 * time.Second
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 		authenticated(w, r.WithContext(ctx))
 	}
