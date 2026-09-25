@@ -26,7 +26,7 @@ type deliveryFixture struct {
 	tokens         []string
 }
 
-func deliverySetup(t *testing.T, accepted bool, limit int) deliveryFixture {
+func deliverySetup(t *testing.T, accepted bool, limit int, siblings ...int) deliveryFixture {
 	t.Helper()
 	p, parent, ks := setup(t)
 	migration, err := os.ReadFile("../../migrations/0003_delivery_review.sql")
@@ -42,6 +42,9 @@ func deliverySetup(t *testing.T, accepted bool, limit int) deliveryFixture {
 	}
 	in := terms(ks)
 	in["deliverables"].([]any)[0].(map[string]any)["revision_limit"] = limit
+	if len(siblings) > 0 {
+		in["deliverables"] = append(in["deliverables"].([]any), map[string]any{"id": "proof-2", "title": "Sibling", "criteria": "Sibling evidence", "amount_base_units": "123", "revision_limit": limit, "review_period_hours": 48})
+	}
 	code, task := call(t, parent, "POST", "/api/v1/tasks", tokens[0], in)
 	expect(t, 201, code, task)
 	id, hash := task["id"].(string), task["manifest_hash"].(string)

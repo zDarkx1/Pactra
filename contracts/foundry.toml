@@ -14,3 +14,4 @@ runs = 256
 [profile.default.invariant]
 runs = 64
 depth = 200
+fail_on_revert = true

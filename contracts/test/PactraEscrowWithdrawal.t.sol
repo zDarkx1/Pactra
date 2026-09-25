@@ -9,7 +9,9 @@ import {ToggleReceiver} from "./Attackers.sol";
 contract PactraEscrowWithdrawalTest is BaseEscrowTest {
     function _settleToWorker(address worker_) internal returns (uint256 id) {
         vm.prank(buyer);
-        id = escrow.createTask(worker_, arbiter, backup, manifest, _configs());
+        id = escrow.createTask(
+            worker_, arbiter, backup, block.chainid, 1, keccak256("pactra-test-manifest"), _configs()
+        );
         vm.prank(worker_);
         escrow.acceptTask(id);
         vm.deal(buyer, _total());
@@ -17,16 +19,16 @@ contract PactraEscrowWithdrawalTest is BaseEscrowTest {
         escrow.fundTask{value: _total()}(id);
         vm.warp(T_SUBMIT);
         vm.prank(worker_);
-        escrow.submitDeliverable(id, 0);
+        escrow.submitDeliverable(id, 0, keccak256("fixture-artifact"), type(uint64).max, hex"f1");
         vm.prank(buyer);
-        escrow.acceptDeliverable(id, 0);
+        escrow.acceptDeliverable(id, 0, 1, keccak256("fixture-artifact"), uint64(T_SUBMIT));
     }
 
     function test_Withdraw_PullBasedTransfer() public {
         uint256 id = _funded();
         _submit0(id);
         vm.prank(buyer);
-        escrow.acceptDeliverable(id, 0);
+        escrow.acceptDeliverable(id, 0, 1, keccak256("fixture-artifact"), uint64(T_SUBMIT));
         vm.expectEmit(true, true, true, true);
         emit PactraEscrow.WithdrawalExecuted(worker, AMOUNT0);
         vm.prank(worker);
@@ -48,7 +50,7 @@ contract PactraEscrowWithdrawalTest is BaseEscrowTest {
         uint256 id = _funded();
         _submit0(id);
         vm.prank(buyer);
-        escrow.acceptDeliverable(id, 0);
+        escrow.acceptDeliverable(id, 0, 1, keccak256("fixture-artifact"), uint64(T_SUBMIT));
         vm.startPrank(worker);
         escrow.withdraw();
         vm.expectRevert(abi.encodeWithSelector(PactraEscrow.NothingToWithdraw.selector));
@@ -101,11 +103,11 @@ contract PactraEscrowWithdrawalTest is BaseEscrowTest {
         uint256 first = _funded();
         _submit0(first);
         vm.prank(buyer);
-        escrow.acceptDeliverable(first, 0);
+        escrow.acceptDeliverable(first, 0, 1, keccak256("fixture-artifact"), uint64(T_SUBMIT));
 
-        bytes32 manifest2 = escrow.manifestDigest(block.chainid, 2, keccak256("pactra-test-manifest"));
         vm.prank(buyer);
-        uint256 second = escrow.createTask(worker, arbiter, backup, manifest2, _configs());
+        uint256 second =
+            escrow.createTask(worker, arbiter, backup, block.chainid, 2, keccak256("pactra-test-manifest"), _configs());
         vm.prank(worker);
         escrow.acceptTask(second);
         vm.deal(buyer, _total());
@@ -113,7 +115,7 @@ contract PactraEscrowWithdrawalTest is BaseEscrowTest {
         escrow.fundTask{value: _total()}(second);
         vm.warp(T_SUBMIT + WINDOW1 + 100 days);
         vm.prank(worker);
-        escrow.submitDeliverable(second, 0);
+        escrow.submitDeliverable(second, 0, keccak256("fixture-artifact"), type(uint64).max, hex"f1");
         vm.warp(block.timestamp + WINDOW0 + 1);
         vm.prank(worker);
         escrow.claimTimeout(second, 0);
@@ -128,15 +130,15 @@ contract PactraEscrowWithdrawalTest is BaseEscrowTest {
         uint256 id = _funded();
         _submit0(id);
         vm.prank(buyer);
-        escrow.acceptDeliverable(id, 0);
+        escrow.acceptDeliverable(id, 0, 1, keccak256("fixture-artifact"), uint64(T_SUBMIT));
         vm.prank(worker);
         escrow.withdraw();
 
         vm.warp(T_SUBMIT);
         vm.prank(worker);
-        escrow.submitDeliverable(id, 1);
+        escrow.submitDeliverable(id, 1, keccak256("fixture-artifact"), type(uint64).max, hex"f1");
         vm.prank(buyer);
-        escrow.openDispute(id, 1);
+        escrow.openDispute(id, 1, 1, keccak256("fixture-artifact"), uint64(T_SUBMIT));
         vm.prank(arbiter);
         escrow.resolveDispute(id, 1, AMOUNT1 / 2);
         vm.prank(worker);

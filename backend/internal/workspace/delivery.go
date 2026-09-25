@@ -63,16 +63,17 @@ type deliveryCheck struct {
 	Output     json.RawMessage `json:"output"`
 }
 type deliveryEvent struct {
-	Version      int             `json:"version"`
-	Actor        string          `json:"actor"`
-	ArtifactHash string          `json:"artifact_hash"`
-	ManifestHash string          `json:"manifest_hash"`
-	Notes        string          `json:"notes"`
-	CreatedAt    time.Time       `json:"created_at"`
-	Artifact     json.RawMessage `json:"artifact,omitempty"`
-	Checker      *deliveryCheck  `json:"checker,omitempty"`
-	Decision     string          `json:"decision,omitempty"`
-	EvidenceFlag bool            `json:"evidence_flag,omitempty"`
+	Version       int                `json:"version"`
+	Actor         string             `json:"actor"`
+	ArtifactHash  string             `json:"artifact_hash"`
+	ManifestHash  string             `json:"manifest_hash"`
+	Notes         string             `json:"notes"`
+	CreatedAt     time.Time          `json:"created_at"`
+	Artifact      json.RawMessage    `json:"artifact,omitempty"`
+	Checker       *deliveryCheck     `json:"checker,omitempty"`
+	Decision      string             `json:"decision,omitempty"`
+	EvidenceFlag  bool               `json:"evidence_flag,omitempty"`
+	ChainRevision *chainRevisionLink `json:"chain_revision,omitempty"`
 }
 
 func (s *server) registerDelivery(mux *http.ServeMux) {
@@ -340,10 +341,34 @@ func (s *server) delivery(w http.ResponseWriter, r *http.Request, actor, operati
 		return
 	}
 	event.CreatedAt = event.CreatedAt.UTC()
+	chainNext := false
+	if operation == "submissions" && s.cfg.Onchain != nil {
+		life, e := s.boundLifecycle(ctx, tx, id, manifestJSON, manifestHash)
+		if e != nil {
+			fail(w, 503)
+			return
+		}
+		if life != nil {
+			for _, d := range life.Allocations {
+				if d.DeliverableID == deliverable {
+					chainNext = d.NextLocalSubmission
+				}
+			}
+			if !chainNext {
+				fail(w, 409)
+				return
+			}
+			event.ChainRevision = &chainRevisionLink{BlockNumber: life.BlockNumber, BlockHash: life.BlockHash, Round: snapshot.LatestVersion + 1}
+			if s.cfg.Onchain.checkObservation(ctx, life) != nil {
+				fail(w, 503)
+				return
+			}
+		}
+	}
 	kind := ""
 	switch operation {
 	case "submissions":
-		if snapshot.State != "not_submitted" && (snapshot.State != "revision_requested" || snapshot.LatestVersion > limit) {
+		if !chainNext && snapshot.State != "not_submitted" && (snapshot.State != "revision_requested" || snapshot.LatestVersion > limit) {
 			fail(w, 409)
 			return
 		}

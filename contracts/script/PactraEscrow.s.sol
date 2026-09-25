@@ -12,8 +12,9 @@ import {PactraEscrow} from "../src/PactraEscrow.sol";
 ///         contracts/deployments/.
 contract PactraEscrowScript is Script {
     function run() external returns (PactraEscrow escrow) {
+        address attestor = vm.envAddress("EVIDENCE_ATTESTOR");
         vm.startBroadcast();
-        escrow = new PactraEscrow();
+        escrow = new PactraEscrow(attestor);
         vm.stopBroadcast();
     }
 }

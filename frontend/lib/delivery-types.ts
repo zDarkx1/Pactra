@@ -12,7 +12,7 @@ export type DeliveryChecker = {
   http_status: number; output: DeliveryCheckOutput;
 };
 export type DeliveryEvent = { version: number; actor: string; artifact_hash: string; manifest_hash: string; notes: string; created_at: string };
-export type DeliverySubmission = DeliveryEvent & { artifact: Record<string, string>; checker: DeliveryChecker };
+export type DeliverySubmission = DeliveryEvent & { artifact: Record<string, string>; checker: DeliveryChecker; chain_revision?: { block_number: string; block_hash: string; round: number } };
 export type DeliveryReviewEvent = DeliveryEvent & { decision: 'accept' | 'request_revision' };
 export type DeliveryDispute = DeliveryEvent & { evidence_flag: true };
 export type DeliveryHistory = {
@@ -112,7 +112,18 @@ export function parseDeliveryHistory(value: unknown): DeliveryHistory {
     state: choice(o.state, ['not_submitted', 'submitted', 'revision_requested', 'accepted', 'disputed']),
     latest_version: integer(o.latest_version, 6), latest_artifact_hash: o.latest_artifact_hash === '' ? '' : pattern(o.latest_artifact_hash, hash, 64),
     revision_limit: integer(o.revision_limit, 5),
-    submissions: array(o.submissions, 6).map(v => { const s = fields(v, [...eventFields, 'artifact', 'checker']); return { ...event(s), artifact: artifact(s.artifact), checker: checker(s.checker) }; }),
+    submissions: array(o.submissions, 6).map(v => {
+      const hasChain = Object.hasOwn(object(v), 'chain_revision');
+      const s = fields(v, [...eventFields, 'artifact', 'checker', ...(hasChain ? ['chain_revision'] : [])]);
+      let chain_revision: DeliverySubmission['chain_revision'];
+      if (hasChain) {
+        const c = fields(s.chain_revision, ['block_number', 'block_hash', 'round']);
+        // Historical bound first submissions also store this authorization as round 1.
+        chain_revision = { block_number: pattern(c.block_number, /^(0|[1-9][0-9]{0,77})$/, 78), block_hash: pattern(c.block_hash, /^0x[a-fA-F0-9]{64}$/, 66), round: integer(c.round, 6, 1) };
+        if (chain_revision.round !== s.version) return invalid();
+      }
+      return { ...event(s), artifact: artifact(s.artifact), checker: checker(s.checker), ...(chain_revision ? { chain_revision } : {}) };
+    }),
     reviews: array(o.reviews, 6).map(v => { const r = fields(v, [...eventFields, 'decision']); return { ...event(r), decision: choice(r.decision, ['accept', 'request_revision']) }; }),
     disputes: array(o.disputes, 1).map(v => { const d = fields(v, [...eventFields, 'evidence_flag']); if (d.evidence_flag !== true) return invalid(); return { ...event(d), evidence_flag: true }; }),
   };
@@ -127,7 +138,7 @@ export function parseDeliveryHistory(value: unknown): DeliveryHistory {
   }
   let state: DeliveryState = 'not_submitted';
   for (const [i, s] of result.submissions.entries()) {
-    if (s.version !== i + 1 || s.manifest_hash !== result.manifest_hash || (i > 0 && state !== 'revision_requested')) return invalid();
+    if (s.version !== i + 1 || s.manifest_hash !== result.manifest_hash || (i > 0 && state !== 'revision_requested' && !(state === 'submitted' && s.chain_revision))) return invalid();
     state = 'submitted';
     const review = result.reviews.find(r => r.version === s.version);
     if (review) {
@@ -141,10 +152,10 @@ export function parseDeliveryHistory(value: unknown): DeliveryHistory {
 }
 export function parseDeliveryMutation(value: unknown): DeliveryMutation { return parseDeliveryHistory(value); }
 export function deliveryRevisionsRemaining(history: DeliveryHistory): number { return Math.max(0, history.revision_limit - Math.max(0, history.latest_version - 1)); }
-export function buildDeliveryIntent(history: DeliveryHistory, action: DeliveryAction, notes: string, rawArtifact: string, acknowledged: boolean, key: string): DeliveryIntent {
+export function buildDeliveryIntent(history: DeliveryHistory, action: DeliveryAction, notes: string, rawArtifact: string, acknowledged: boolean, key: string, chainNext = false): DeliveryIntent {
   if (acknowledged !== true) throw new Error('Confirm that this is voluntary unfunded review before continuing.');
   pattern(key, uuid, 36); text(notes, 2000);
-  const canSubmit = history.state === 'not_submitted' || (history.state === 'revision_requested' && deliveryRevisionsRemaining(history) > 0);
+  const canSubmit = history.state === 'not_submitted' || (history.state === 'revision_requested' && deliveryRevisionsRemaining(history) > 0) || (chainNext && history.state === 'submitted' && deliveryRevisionsRemaining(history) > 0);
   if ((action === 'submit' && !canSubmit) || (action === 'accept' && history.state !== 'submitted') ||
     (action === 'request_revision' && (history.state !== 'submitted' || deliveryRevisionsRemaining(history) === 0)) ||
     (action === 'dispute' && !['submitted', 'revision_requested'].includes(history.state))) return invalid();

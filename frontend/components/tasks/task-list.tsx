@@ -75,7 +75,7 @@ function TaskList() {
           const isBuyer = task.manifest.buyer.toLowerCase() === address?.toLowerCase();
           const peer = isBuyer ? task.manifest.worker : task.manifest.buyer;
           const displayStatus = taskDisplayStatus(task, now);
-          const nextAction = displayStatus === 'invited' ? (isBuyer ? 'Waiting for worker' : 'Review and accept') : displayStatus === 'expired' ? (isBuyer ? 'May be cancelled' : 'Acceptance unavailable') : displayStatus === 'accepted_unfunded' ? 'No funds deposited' : 'Invitation closed';
+          const nextAction = displayStatus === 'invited' ? (isBuyer ? 'Waiting for worker' : 'Review and accept') : displayStatus === 'expired' ? (isBuyer ? 'May be cancelled' : 'Acceptance unavailable') : displayStatus === 'accepted_unfunded' ? 'Open to verify chain state' : 'Invitation closed';
           return <li key={task.id}>
             <Link prefetch={false} className={styles.taskRow} href={'/tasks/' + task.id}>
               <div className={styles.taskSummary}><span className={styles.taskTitle}>{task.manifest.title}</span><span className={styles.meta}>You are the {isBuyer ? 'buyer' : 'worker'} · {task.manifest.deliverables.length} deliverable{task.manifest.deliverables.length === 1 ? '' : 's'}</span><span className={styles.meta}>ID <code title={task.id}>{task.id.slice(0, 8)}</code></span></div>

@@ -17,7 +17,7 @@ export function ManifestDetails({ terms, buyer, chainId, total, manifest }: { te
   return <div className={styles.stack}>
     <section className={styles.section} aria-labelledby="terms-heading"><h2 id="terms-heading">Agreement terms</h2><h3 className={styles.taskTitle}>{terms.title}</h3>
       <dl className={styles.policyGrid}><div><dt>Delivery deadline</dt><dd><TaskTime value={terms.delivery_deadline} /></dd></div><div><dt>Chain ID</dt><dd>{chainId}</dd></div><div><dt>Total · base units</dt><dd className={styles.mono}>{total}</dd></div></dl>
-      <p className={styles.hint}>Amounts are exact base-unit allocations. No token denomination or decimal scale is assumed. No funds are held or moved here.</p>
+      <p className={styles.hint}>Amounts are exact base-unit allocations. No token denomination or decimal scale is assumed. This terms record does not track funds; inspect the onchain panel for verified balances and settlement.</p>
     </section>
     <section className={styles.section} aria-labelledby="participants-heading"><h2 id="participants-heading">Participants</h2><dl className={styles.participants}>
       <div><dt>Buyer</dt><dd><CopyValue value={buyer} label="buyer address" /></dd></div>
@@ -30,6 +30,6 @@ export function ManifestDetails({ terms, buyer, chainId, total, manifest }: { te
     <section className={styles.section} aria-labelledby="policy-heading"><h2 id="policy-heading">Agreement policy</h2><dl className={styles.policyGrid}>
       <div><dt>Manifest version</dt><dd>{manifest?.version ?? 1}</dd></div><div><dt>Primary arbiter window</dt><dd>{manifest?.primary_arbiter_hours ?? 48} hours</dd></div><div><dt>Backup arbiter window</dt><dd>{manifest?.backup_arbiter_hours ?? 48} hours</dd></div>
       <div><dt>Invitation expiry</dt><dd>{manifest ? <TaskTime value={manifest.invite_expires_at} /> : '72 hours after creation, or the delivery deadline if sooner. The server sets the exact time.'}</dd></div>
-    </dl><p className={styles.hint}>Terms cannot be edited after creation. Acceptance ends at accepted_unfunded. Funding, submissions, payouts, and disputes are not available in this workspace.</p></section>
+    </dl><p className={styles.hint}>Terms cannot be edited after creation. Workspace acceptance is separate from funding. Use the evidence review and onchain panels for their respective actions and status.</p></section>
   </div>;
 }

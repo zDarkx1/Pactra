@@ -11,6 +11,7 @@ import { shellStyles as styles } from "./shell-styles";
 
 const destinations = [
   { href: "/tasks", label: "Agreements", icon: "tasks" as const },
+  { href: "/arbiter", label: "Arbiter workspace", icon: "tasks" as const },
   { href: "/checker", label: "JSON checker", icon: "checker" as const },
 ];
 
@@ -146,7 +147,7 @@ function MobileNavigation() {
           <Dialog.Description className="sr-only">Navigate your agreements or open the public JSON checker.</Dialog.Description>
           <Navigation onNavigate={href => navigate(href)} />
           <SidebarLink href="/tasks/new" label="New agreement" icon="plus" className={styles.sidebarCreate} onNavigate={href=>navigate(href)}/>
-          <div className={styles.drawerFooter}><Link href="/" onClick={event => navigate('/', event)}>Back to Pactra <Icon name="arrow-up-right" /></Link><p>Private agreements. Inspectable evidence.<br />No funds move in this release.</p></div>
+          <div className={styles.drawerFooter}><Link href="/" onClick={event => navigate('/', event)}>Back to Pactra <Icon name="arrow-up-right" /></Link><p>Private agreements. Inspectable evidence.<br />Settlement requires verified deployment.</p></div>
       </Dialog.Content>
     </Dialog.Portal>
   </Dialog.Root>;
@@ -206,11 +207,11 @@ export default function AppShell({ children, title, description }: { children: R
   }
   const pathname = usePathname();
   const isChecker = pathname.startsWith("/checker");
-  const section = isChecker ? "JSON checker" : "Agreements";
+  const section = isChecker ? "JSON checker" : pathname.startsWith('/arbiter') ? 'Arbiter workspace' : "Agreements";
   const detail = pathname === "/tasks/new" ? "New agreement" : pathname.startsWith("/tasks/") ? "Agreement details" : null;
   return <div className={styles.shell} data-sidebar={collapsed ? "collapsed" : "expanded"} data-sidebar-motion={sidebarMotion}>
     <a className={styles.skipLink} href="#main-content">Skip to content</a>
-    <aside id="workspace-sidebar" className={styles.sidebar} aria-label="Workspace sidebar"><div className={styles.sidebarSurface} aria-hidden="true" /><div className={styles.sidebarContent}><Wordmark compact={collapsed} /><div className={styles.workspaceLabel} aria-hidden={collapsed || undefined}>{collapsed ? ' ' : 'Workspace'}</div><Navigation compact={collapsed} /><SidebarLink href="/tasks/new" label="New agreement" icon="plus" className={styles.sidebarCreate} compact={collapsed}/><div className={styles.sidebarNote} hidden={collapsed}><span className={styles.releaseLabel}><Icon name="info" />Current release</span><p>Agree on terms and check files. Funding and payouts are not available.</p><Link href="/">About Pactra <Icon name="arrow-up-right" /></Link></div></div></aside>
+    <aside id="workspace-sidebar" className={styles.sidebar} aria-label="Workspace sidebar"><div className={styles.sidebarSurface} aria-hidden="true" /><div className={styles.sidebarContent}><Wordmark compact={collapsed} /><div className={styles.workspaceLabel} aria-hidden={collapsed || undefined}>{collapsed ? ' ' : 'Workspace'}</div><Navigation compact={collapsed} /><SidebarLink href="/tasks/new" label="New agreement" icon="plus" className={styles.sidebarCreate} compact={collapsed}/><div className={styles.sidebarNote} hidden={collapsed}><span className={styles.releaseLabel}><Icon name="info" />Current release</span><p>Agree on terms and check files. Onchain actions require verified deployment and wallet confirmation.</p><Link href="/">About Pactra <Icon name="arrow-up-right" /></Link></div></div></aside>
     <div className={styles.workspace} ref={workspaceElement}>
       <header className={styles.topbar}>
         <div className={styles.topbarLocation}><button className={styles.sidebarToggle} type="button" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-expanded={!collapsed} aria-controls="workspace-sidebar" onClick={event => toggleSidebar(event.detail > 0)}><Icon name="panel-left" /></button><nav className={styles.desktopContext} aria-label="Breadcrumb"><span>Workspace</span><Icon name="chevron-right" />{detail ? <><Link href="/tasks">Agreements</Link><Icon name="chevron-right" /><span aria-current="page">{detail}</span></> : <span aria-current="page">{section}</span>}</nav></div>
