@@ -1,4 +1,5 @@
 import { parseSiweMessage } from 'viem/siwe';
+import { parseSettlementResponse } from './onchain-types.ts';
 import { BodyTooLarge, readBoundedBody } from './bounded-body.ts';
 import { appOrigin, getPublicWorkspaceConfig } from './workspace-config.ts';
 import { parseTask, uuidPattern, walletAddressPattern } from './workspace-types.ts';
@@ -140,6 +141,7 @@ export async function handleWorkspaceRequest(request: Request, segments: string[
     const response = await upstream(path + query, request.method, token, body, idempotencyKey ?? undefined);
     if (![200, 201].includes(response.status)) return forwardFailure(response);
     const value = await data(response, route.kind === 'review' ? 256 * 1024 : undefined);
+    if (route.kind === 'settlement' || route.kind === 'arbiterQueue') return json(parseSettlementResponse('/' + path, value), response.status);
     if (path === 'tasks' && read) {
       return json(parseTaskPage(value));
     }

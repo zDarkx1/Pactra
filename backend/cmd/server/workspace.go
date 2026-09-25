@@ -19,7 +19,7 @@ func workspaceEnvironment(get func(string) string) (string, workspace.Config, er
 	chain := get("PACTRA_CHAIN_ID")
 	arbiters := get("PACTRA_ARBITERS")
 	invalid := errors.New("workspace requires DATABASE_URL, valid auth domain/URI and positive chain ID; remote DB requires sslmode=verify-full")
-	if dsn == "" && cfg.Domain == "" && cfg.URI == "" && chain == "" && arbiters == "" {
+	if dsn == "" && cfg.Domain == "" && cfg.URI == "" && chain == "" && arbiters == "" && (get("PACTRA_ONCHAIN_ENABLED") == "" || get("PACTRA_ONCHAIN_ENABLED") == "false") {
 		return "", cfg, nil
 	}
 	if dsn == "" || cfg.Domain == "" || cfg.URI == "" {
@@ -30,6 +30,10 @@ func workspaceEnvironment(get func(string) string) (string, workspace.Config, er
 		return "", cfg, invalid
 	}
 	cfg.ChainID = n
+	cfg.Onchain, err = workspace.LoadOnchainConfig(get, n)
+	if err != nil {
+		return "", cfg, errors.New("invalid onchain configuration")
+	}
 	u, err := url.Parse(dsn)
 	if err != nil || !(u.Scheme == "postgres" || u.Scheme == "postgresql") {
 		return "", cfg, invalid
@@ -138,10 +142,18 @@ func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) 
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/", fallback)
+	if cfg.Onchain != nil {
+		if cfg.Onchain.Validate(probe) != nil || pool.QueryRow(probe, workspace.OnchainSchemaQuery).Scan(&schema) != nil || !schema {
+			pool.Close()
+			return nil, nil, errors.New("onchain deployment or migration is unavailable")
+		}
+	}
 	mux.Handle("/api/v1/auth/", h)
 	mux.Handle("/api/v1/me", h)
 	mux.Handle("/api/v1/tasks", h)
 	mux.Handle("/api/v1/tasks/", h)
+	mux.Handle("/api/v1/arbiter/", h)
+	mux.Handle("/api/v1/onchain/", h)
 	mux.Handle("/api/v1/review", h)
 	mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
 		c, cancel := context.WithTimeout(r.Context(), 2*time.Second)
@@ -149,6 +161,11 @@ func withWorkspace(ctx context.Context, fallback http.Handler, get func(string) 
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		var schemaReady bool
+		if cfg.Onchain != nil && (pool.QueryRow(c, workspace.OnchainSchemaQuery).Scan(&schemaReady) != nil || !schemaReady) {
+			w.WriteHeader(503)
+			_, _ = w.Write([]byte(`{"status":"unavailable"}`))
+			return
+		}
 		if pool.QueryRow(c, workspaceSchemaQuery).Scan(&schemaReady) != nil || !schemaReady {
 			w.WriteHeader(503)
 			_, _ = w.Write([]byte(`{"status":"unavailable"}`))

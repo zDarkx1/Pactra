@@ -1,16 +1,22 @@
 import { parseTask, uuidPattern, type Task } from './workspace-types.ts';
 
-export type WorkspaceRoute = { path: string; kind: 'auth' | 'me' | 'tasks' | 'task' | 'taskMutation' | 'delivery' | 'review'; methods: readonly string[] };
+export type WorkspaceRoute = { path: string; kind: 'auth' | 'me' | 'tasks' | 'task' | 'taskMutation' | 'delivery' | 'review' | 'settlement' | 'arbiterQueue'; methods: readonly string[] };
 export function workspaceRoute(path: string): WorkspaceRoute | null {
   // Validate before URL parsing: no decoding, normalization, alternate targets or traversal.
   if (!path.startsWith('/') || /[%\\?#\s]/.test(path)) return null;
   const segments = path.slice(1).split('/');
+  if (path === '/onchain/config') return { path, kind: 'settlement', methods: ['GET'] };
+  if (path === '/arbiter/disputes') return { path, kind: 'arbiterQueue', methods: ['GET'] };
+  if (segments.length === 6 && segments[0] === 'arbiter' && segments[1] === 'tasks' && uuidPattern.test(segments[2]) && segments[3] === 'deliverables' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segments[4]) && segments[4].length <= 64 && segments[5] === 'evidence') return { path, kind: 'settlement', methods: ['GET'] };
   if (path === '/me') return { path, kind: 'me', methods: ['GET'] };
   if (path === '/review') return { path, kind: 'review', methods: ['POST'] };
   if (/^\/auth\/(challenge|verify|logout)$/.test(path)) return { path, kind: 'auth', methods: ['POST'] };
   if (path === '/tasks') return { path, kind: 'tasks', methods: ['GET', 'POST'] };
   if (segments[0] !== 'tasks' || !uuidPattern.test(segments[1] || '')) return null;
   if (segments.length === 2) return { path, kind: 'task', methods: ['GET'] };
+  if (segments.length === 3 && segments[2] === 'onchain') return { path, kind: 'settlement', methods: ['GET'] };
+  if (segments.length === 4 && segments[2] === 'onchain' && segments[3] === 'reconcile') return { path, kind: 'settlement', methods: ['POST'] };
+  if (segments.length === 6 && segments[2] === 'deliverables' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segments[3]) && segments[3].length <= 64 && segments[4] === 'onchain' && segments[5] === 'availability') return { path, kind: 'settlement', methods: ['POST'] };
   if (segments.length === 3 && ['accept', 'cancel'].includes(segments[2])) return { path, kind: 'taskMutation', methods: ['POST'] };
   if (segments.length === 5 && segments[2] === 'deliverables' && segments[3].length <= 64 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segments[3]) && ['submissions', 'reviews', 'disputes'].includes(segments[4])) {
     return { path, kind: 'delivery', methods: segments[4] === 'submissions' ? ['GET', 'POST'] : ['POST'] };
@@ -24,7 +30,7 @@ export function validCursor(value: unknown): value is string {
 }
 export function workspaceQuery(route: WorkspaceRoute, method: string, search: string): string {
   if (!search) return '';
-  if (route.kind !== 'tasks' || method !== 'GET' || search.length > 4096 || /[#\\\s]|%(?![0-9a-f]{2})/i.test(search)
+  if (!['tasks', 'arbiterQueue'].includes(route.kind) || method !== 'GET' || search.length > 4096 || /[#\\\s]|%(?![0-9a-f]{2})/i.test(search)
     || !/^\?[^&]+(?:&[^&]+)*$/.test(search)) throw new Error('Invalid query.');
   const params = new URLSearchParams(search);
   if (!params.size || [...params.keys()].some(key => !['limit', 'cursor'].includes(key) || params.getAll(key).length !== 1)) throw new Error('Invalid query.');

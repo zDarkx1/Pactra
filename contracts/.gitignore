@@ -1,5 +1,6 @@
 out/
 cache/
 broadcast/
+.toolchain/
 .env
 .env.*

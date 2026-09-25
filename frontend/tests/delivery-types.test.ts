@@ -27,6 +27,52 @@ function submitted() {
 }
 function event() { return { version: 1, actor, artifact_hash: artifactHash, manifest_hash: hash, notes: '', created_at: '2026-09-24T12:01:00Z' }; }
 
+test('APP-01: stored round-one chain authorization remains readable by both parsers', () => {
+  const first = submitted();
+  const link = { block_number: '12', block_hash: '0x' + 'c'.repeat(64), round: 1 };
+  const history = { ...first, submissions: [{ ...first.submissions[0], chain_revision: link }] };
+  for (const parse of [parseDeliveryHistory, parseDeliveryMutation]) {
+    assert.deepEqual(parse(history), history);
+    for (const round of [0, 2, 7, 1.5, '1', null]) {
+      assert.throws(() => parse({ ...history, submissions: [{ ...history.submissions[0], chain_revision: { ...link, round } }] }));
+    }
+    const second = { ...history.submissions[0], version: 2, chain_revision: { ...link, round: 2 } };
+    assert.equal(parse({ ...history, latest_version: 2, submissions: [...history.submissions, second] }).latest_version, 2);
+  }
+});
+test('APP-01: actual enabled Go/EVM first POST, persisted GET and replay pass the BFF parsers', {
+  skip: !process.env.PACTRA_DELIVERY_ONCHAIN_RESPONSE && 'Run Go TestLocalEVMReconcileAndAvailability for actual enabled responses.',
+}, () => {
+  const fixture = JSON.parse(readFileSync(process.env.PACTRA_DELIVERY_ONCHAIN_RESPONSE!, 'utf8'));
+  assert.equal(parseDeliveryHistory(fixture.empty).latest_version, 0);
+  assert.deepEqual(fixture.post, fixture.get);
+  assert.deepEqual(fixture.post, fixture.replay);
+  for (const value of [fixture.post, fixture.get, fixture.replay]) {
+    assert.deepEqual(parseDeliveryMutation(value), value);
+    assert.deepEqual(parseDeliveryHistory(value), value);
+    assert.equal(value.submissions[0].chain_revision.round, 1);
+    assert.equal(value.submissions[0].chain_revision.block_hash, fixture.block_hash);
+    assert.equal(value.submissions[0].chain_revision.block_number, fixture.block_number);
+  }
+});
+
+test('chain revision metadata permits append without inventing a local buyer review, never past terminal history', () => {
+  const first = submitted();
+  const link = { block_number: '12', block_hash: '0x' + 'c'.repeat(64), round: 2 };
+  const second = { ...first.submissions[0], version: 2, chain_revision: link };
+  const history = { ...first, latest_version: 2, submissions: [...first.submissions, second] };
+  assert.equal(parseDeliveryHistory(history).latest_version, 2);
+  assert.throws(() => parseDeliveryHistory({ ...history, submissions: [first.submissions[0], { ...second, chain_revision: { ...link, round: 3 } }] }));
+  assert.throws(() => parseDeliveryHistory({ ...history, reviews: [{ ...event(), decision: 'accept' }] }));
+  assert.throws(() => parseDeliveryHistory({ ...history, disputes: [{ ...event(), evidence_flag: true }] }));
+});
+test('chain-authorized next revision preserves raw submission intent without fabricating local review', () => {
+  const history = parseDeliveryHistory(submitted());
+  assert.throws(() => buildDeliveryIntent(history, 'submit', '', '{"greeting":"Salut"}', true, id));
+  const intent = buildDeliveryIntent(history, 'submit', '', '{"greeting":"Salut"}', true, id, true);
+  assert.equal(JSON.parse(intent.body).expected_version, 1);
+  assert.equal(JSON.parse(intent.body).decision, undefined);
+});
 test('both exported parsers accept actual snapshot shape and copy private objects', () => {
   assert.deepEqual(parseDeliveryHistory(empty()), empty());
   const input = submitted(), result = parseDeliveryMutation(input);

@@ -3,6 +3,7 @@ pragma solidity ^0.8.37;
 
 import {Test} from "forge-std/Test.sol";
 import {PactraEscrow} from "../src/PactraEscrow.sol";
+import {FixtureAttestor} from "./FixtureAttestor.sol";
 
 /// @dev Shared fixture: two deliverables, funded task ready for review.
 contract BaseEscrowTest is Test {
@@ -25,15 +26,21 @@ contract BaseEscrowTest is Test {
     uint256 internal constant DEADLINE0 = T_SUBMIT + 1 days;
 
     function setUp() public virtual {
-        escrow = new PactraEscrow();
-        manifest = escrow.manifestDigest(block.chainid, 1, keccak256("pactra-test-manifest"));
+        escrow = new PactraEscrow(address(new FixtureAttestor()));
+        manifest = escrow.manifestDigest(
+            buyer, worker, arbiter, backup, block.chainid, 1, keccak256("pactra-test-manifest"), _configs()
+        );
         vm.label(address(escrow), "escrow");
     }
 
     function _configs() internal view returns (PactraEscrow.DeliverableConfig[] memory c) {
         c = new PactraEscrow.DeliverableConfig[](2);
-        c[0] = PactraEscrow.DeliverableConfig({amount: AMOUNT0, revisionLimit: LIMIT0, reviewWindow: WINDOW0});
-        c[1] = PactraEscrow.DeliverableConfig({amount: AMOUNT1, revisionLimit: 0, reviewWindow: WINDOW1});
+        c[0] = PactraEscrow.DeliverableConfig({
+            amount: AMOUNT0, revisionLimit: LIMIT0, reviewWindow: WINDOW0, deliveryDeadline: 365 days
+        });
+        c[1] = PactraEscrow.DeliverableConfig({
+            amount: AMOUNT1, revisionLimit: 0, reviewWindow: WINDOW1, deliveryDeadline: 365 days
+        });
     }
 
     function _total() internal pure returns (uint256) {
@@ -42,7 +49,8 @@ contract BaseEscrowTest is Test {
 
     function _create() internal returns (uint256 id) {
         vm.prank(buyer);
-        return escrow.createTask(worker, arbiter, backup, manifest, _configs());
+        return
+            escrow.createTask(worker, arbiter, backup, block.chainid, 1, keccak256("pactra-test-manifest"), _configs());
     }
 
     function _fund(uint256 id) internal {
@@ -61,7 +69,7 @@ contract BaseEscrowTest is Test {
     function _submit0(uint256 id) internal {
         vm.warp(T_SUBMIT);
         vm.prank(worker);
-        escrow.submitDeliverable(id, 0);
+        escrow.submitDeliverable(id, 0, keccak256("fixture-artifact"), type(uint64).max, hex"f1");
     }
 
     function _status(uint256 id, uint256 index) internal view returns (PactraEscrow.DeliverableStatus) {

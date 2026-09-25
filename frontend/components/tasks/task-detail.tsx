@@ -9,6 +9,7 @@ import { workspaceRequest } from '../../lib/workspace-client';
 import type { Task } from '../../lib/workspace-types';
 import { ManifestDetails } from './manifest-details';
 import { DeliveryReview } from './delivery-review';
+import { TaskOnchain } from '../onchain/task-actions';
 import { TaskButton, CopyValue, SessionExpired, TaskLoading, TaskSession, TaskStatusBadge, TaskTime, taskDisplayStatus, taskErrorMessage, taskErrorStatus, useTaskClock, useTaskResource } from './task-shared';
 import styles from './task-styles';
 
@@ -56,7 +57,7 @@ function TaskDetail({ id }: { id: string }) {
       });
       if (controller.signal.aborted) return;
       setData(current);
-      setFeedback(action === 'accept' ? 'Acceptance confirmed by the server. This task is unfunded.' : 'Cancellation confirmed by the server.');
+      setFeedback(action === 'accept' ? 'Workspace acceptance confirmed. Check the onchain panel separately for funding status.' : 'Cancellation confirmed by the server.');
     } catch (cause) {
       if (controller.signal.aborted) return;
       const status = taskErrorStatus(cause);
@@ -89,15 +90,16 @@ function TaskDetail({ id }: { id: string }) {
       <dl className={styles.policyGrid}><div><dt>Created</dt><dd><TaskTime value={visibleTask.created_at} /></dd></div><div><dt>Invitation expires</dt><dd><TaskTime value={visibleTask.invite_expires_at} /></dd></div></dl>
       {taskDisplayStatus(visibleTask, now) === 'expired' && <p className={styles.notice}>Expired according to your device clock. The server is authoritative. The buyer may still cancel this invitation.</p>}
       <ManifestDetails terms={visibleTask.manifest} manifest={visibleTask.manifest} buyer={visibleTask.manifest.buyer} chainId={visibleTask.manifest.chain_id} total={visibleTask.manifest.total_base_units} />
-      <section className={styles.section} aria-labelledby="fingerprint-heading"><h2 id="fingerprint-heading">Terms fingerprint</h2><CopyValue value={visibleTask.manifest_hash} label="manifest hash" /><p className={styles.hint}>Exact SHA-256 hash returned by the server. This is an application terms fingerprint, not an onchain commitment. Acceptance sends this exact hash; it is never recomputed in the browser.</p><details className={styles.disclosure}><summary>Full manifest JSON</summary><pre className={styles.source} tabIndex={0}><code>{JSON.stringify(visibleTask.manifest, null, 2)}</code></pre></details><p className={styles.hint}>Task ID: <code className={styles.fullValue}>{visibleTask.id}</code></p></section>
+      <section className={styles.section} aria-labelledby="fingerprint-heading"><h2 id="fingerprint-heading">Terms fingerprint</h2><CopyValue value={visibleTask.manifest_hash} label="manifest hash" /><p className={styles.hint}>Exact SHA-256 content hash returned by the server. Workspace acceptance sends this exact hash; it is never recomputed in the browser. Onchain creation binds it inside a separate contract/domain-specific manifest digest.</p><details className={styles.disclosure}><summary>Full manifest JSON</summary><pre className={styles.source} tabIndex={0}><code>{JSON.stringify(visibleTask.manifest, null, 2)}</code></pre></details><p className={styles.hint}>Task ID: <code className={styles.fullValue}>{visibleTask.id}</code></p></section>
       <section className={styles.actionSection} aria-labelledby="agreement-actions"><h2 id="agreement-actions" tabIndex={-1}>Agreement actions</h2>
         {visibleTask.status === 'invited' ? <>
           <p>{isWorker ? 'Read every term and the source above before accepting. Terms cannot be edited after creation.' : 'The worker must accept these exact terms. You can cancel an invitation while its server status is invited, including after expiry.'}</p>
           {isWorker && <TaskButton type="button" className={styles.primary} disabled={pending !== null || loading || error != null || taskDisplayStatus(visibleTask, now) === 'expired'} onClick={event => setConfirmation({ action: 'accept', pointer: event.detail > 0, task: visibleTask })}>{pending === 'accept' ? 'Accepting…' : pending === 'readback' ? 'Checking state…' : 'Accept agreement'}</TaskButton>}
           {isBuyer && <TaskButton type="button" className={styles.danger} disabled={pending !== null || loading || error != null} onClick={event => setConfirmation({ action: 'cancel', pointer: event.detail > 0, task: visibleTask })}>{pending === 'cancel' ? 'Cancelling…' : pending === 'readback' ? 'Checking state…' : 'Cancel invitation'}</TaskButton>}
-        </> : <p>{visibleTask.status === 'accepted_unfunded' ? 'The worker accepted this agreement. No funds have been deposited. Voluntary unfunded work review is available below; funding is not available.' : 'This invitation has been cancelled. It cannot be reopened or edited.'}</p>}
+        </> : <p>{visibleTask.status === 'accepted_unfunded' ? 'The worker accepted this workspace agreement. This application status does not track deposits. Read the separate onchain panel for verified funding and settlement state.' : 'This invitation has been cancelled. It cannot be reopened or edited.'}</p>}
         <p className={styles.hint}>The standalone checker does not submit work or accept an agreement.</p>
       </section>
+      <TaskOnchain task={visibleTask} />
       <DeliveryReview task={visibleTask} />
     </> : !loading && !error && !actionError && <div className={styles.empty}><h2>Task not found or unavailable</h2><p>This task may not exist or may not be available to this account.</p></div>}
     {confirmation && <AgreementConfirmation {...confirmation} onDismiss={message => { setConfirmation(null); if (message) setActionError(message); }} onConfirm={() => void act(confirmation.action, confirmation.task)} />}

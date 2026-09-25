@@ -6,13 +6,14 @@ import { useWorkspace } from '../workspace-provider';
 import { Icon } from '../ui';
 import { workspaceRequest, WorkspaceError } from '../../lib/workspace-client';
 import type { Deliverable, Task } from '../../lib/workspace-types';
+import type { ChainBinding } from '../../lib/onchain-types';
 import { buildDeliveryIntent, deliveryRevisionsRemaining, type DeliveryAction, type DeliveryHistory, type DeliveryIntent, type DeliverySubmission } from '../../lib/delivery-types';
 import { SessionExpired, TaskTime, taskErrorStatus } from './task-shared';
 import styles from './task-styles';
 
 const stateLabels = { not_submitted: 'No submission', submitted: 'Awaiting buyer review', revision_requested: 'Revision requested', accepted: 'Accepted by buyer', disputed: 'Disputed · review frozen' };
 const actionLabels: Record<DeliveryAction, string> = { submit: 'Submit voluntary work', accept: 'Accept this version', request_revision: 'Request revision', dispute: 'Flag dispute' };
-const warning = 'No deposit has been made. There is no obligation to start work and no financial deadlines. This is voluntary unfunded work review only.';
+const warning = 'This is the voluntary unfunded work review record, not a chain balance or deadline report. These workspace actions do not move funds or start the onchain review clock. If you funded a contract separately, its deadlines and obligations still apply; inspect the onchain panel.';
 const freezeWarning = 'A dispute permanently freezes review for this deliverable. It records a participant allegation, not a verified finding. There is no automated arbitration or resolution.';
 
 export function DeliveryReview({ task }: { task: Task }) {
@@ -26,7 +27,7 @@ export function DeliveryReview({ task }: { task: Task }) {
   return <section className={styles.stack} aria-label="Voluntary unfunded work review" key={scope}>
     <h2>Voluntary unfunded work review</h2>
     <p className={styles.notice}><Icon name="info" />{warning}</p>
-    <p className={styles.hint}>You are the {role}. Only the buyer and worker can view these artifacts. Drafts stay in memory in this view and are cleared when you leave or change accounts.</p>
+    <p className={styles.hint}>You are the {role}. Buyer and worker can view these artifacts; nominated arbiters can read this deliverable’s evidence after a dispute is recorded. Drafts stay in memory and are cleared when you leave or change accounts.</p>
     {task.manifest.deliverables.map(deliverable => <DeliverableReview key={scope + ':' + deliverable.id} task={task} deliverable={deliverable} role={role} />)}
   </section>;
 }
@@ -57,6 +58,7 @@ function useDelivery(task: Task, deliverable: Deliverable) {
   const [history, setHistory] = useState<DeliveryHistory | null>(null);
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState(false);
+  const [chainNext, setChainNext] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [expired, setExpired] = useState(false);
@@ -81,7 +83,14 @@ function useDelivery(task: Task, deliverable: Deliverable) {
   async function read(controller: AbortController) {
     const result = matchSnapshot(await workspaceRequest<DeliveryHistory>(path, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]) }), task, deliverable);
     if (!current(controller)) throw new DOMException('Discarded delivery read.', 'AbortError');
-    setHistory(result); setFresh(true);
+    let next = false;
+    try {
+      const binding = await workspaceRequest<ChainBinding>('/tasks/' + task.id + '/onchain', { signal: controller.signal });
+      const allocation = binding.lifecycle?.allocations.find(a => a.deliverable_id === deliverable.id);
+      next = binding.lifecycle?.task_state === 'funded' && allocation?.state === 'awaiting_submission' && allocation.next_local_submission && allocation.evidence_matches && allocation.local_version === result.latest_version && allocation.round === String(result.latest_version + 1);
+    } catch { /* Missing/disabled chain never blocks the original unfunded review. */ }
+    if (!current(controller)) throw new DOMException('Discarded chain eligibility.', 'AbortError');
+    setChainNext(next); setHistory(result); setFresh(true);
     return result;
   }
   async function reload() {
@@ -134,7 +143,7 @@ function useDelivery(task: Task, deliverable: Deliverable) {
       if (current(controller)) { active.current = null; setBusy(false); }
     }
   }
-  return { history, busy, fresh, error, feedback, expired, inaccessible, intent, reload, send };
+  return { history, busy, fresh, chainNext, error, feedback, expired, inaccessible, intent, reload, send };
 }
 
 function DeliverableReview({ task, deliverable, role }: { task: Task; deliverable: Deliverable; role: 'buyer' | 'worker' }) {
@@ -152,13 +161,13 @@ function DeliverableReview({ task, deliverable, role }: { task: Task; deliverabl
   if (review.expired) return <SessionExpired />;
   if (review.inaccessible) return <p role="alert" className={styles.errorBox}>This deliverable is unavailable. Private review data has been cleared.</p>;
   const remaining = h ? deliveryRevisionsRemaining(h) : 0;
-  const canSubmit = role === 'worker' && h && (h.state === 'not_submitted' || (h.state === 'revision_requested' && remaining > 0));
+  const canSubmit = role === 'worker' && h && (h.state === 'not_submitted' || ((h.state === 'revision_requested' || (h.state === 'submitted' && review.chainNext)) && remaining > 0));
   const canReview = role === 'buyer' && h?.state === 'submitted';
   const canDispute = h && ['submitted', 'revision_requested'].includes(h.state);
   function confirm(acknowledged: boolean) {
     if (!h || !confirmation || !acknowledged || review.busy || review.intent || !review.fresh) return;
     try {
-      const intent = buildDeliveryIntent(h, confirmation, notes, raw, acknowledged, crypto.randomUUID());
+      const intent = buildDeliveryIntent(h, confirmation, notes, raw, acknowledged, crypto.randomUUID(), review.chainNext);
       setConfirmation(null); setInputError('');
       void review.send(intent).then(confirmed => { if (confirmed) { setRaw(''); setNotes(''); } });
     } catch (cause) { setConfirmation(null); setInputError(cause instanceof Error ? cause.message : 'Check the input before continuing.'); }
@@ -173,6 +182,7 @@ function DeliverableReview({ task, deliverable, role }: { task: Task; deliverabl
     {!h && !review.busy && !review.error && <p>Read the current review to continue.</p>}
     {h && <>
       <p className={styles.badge}>{stateLabels[h.state]}</p>
+      {review.chainNext && <p className={styles.notice}>The backend verified an onchain revision. You may persist the next version without inventing a local buyer review. Submission to the contract remains a separate confirmed wallet action.</p>}
       {!review.fresh && <p className={styles.hint}>This is the last successful server read. Actions are blocked until a fresh read succeeds.</p>}
       <p className={styles.hint}>Revisions remaining: {remaining} of {h.revision_limit}, based on server history.</p>
       {h.state === 'not_submitted' && <p>No work has been submitted for this deliverable.</p>}
@@ -261,7 +271,7 @@ function ReviewConfirmation({ action, history, notes, raw, onCancel, onConfirm }
         {notes && <p className={styles.criteria}>{notes}</p>}
         <label htmlFor={acknowledgmentId} className="flex min-h-11 cursor-pointer items-start gap-3 rounded p-2">
           <Checkbox.Root id={acknowledgmentId} checked={acknowledged} onCheckedChange={value => setAcknowledged(value === true)} className="mt-1 flex size-6 min-h-6 shrink-0 items-center justify-center rounded border border-[var(--control-border)] bg-canvas p-0 data-[state=checked]:bg-coral"><Checkbox.Indicator><Icon name="check" /></Checkbox.Indicator></Checkbox.Root>
-          <span>I understand this is voluntary unfunded review: no deposit, no obligation to start work, and no financial deadlines.</span>
+          <span>I understand this is a workspace evidence action, not a deposit, payout or onchain submission. Any separately funded contract and its deadlines remain authoritative.</span>
         </label>
         <div className={styles.actions}><button type="button" autoFocus className={styles.secondary} onClick={onCancel}>Go back</button><button type="button" className={action === 'dispute' ? styles.danger : styles.primary} disabled={!acknowledged} onClick={() => onConfirm(acknowledged)}>Confirm {actionLabels[action].toLowerCase()}</button></div>
       </div>

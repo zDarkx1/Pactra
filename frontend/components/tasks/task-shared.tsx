@@ -158,7 +158,7 @@ export function taskDisplayStatus(task: Task, now: number): Task['status'] | 'ex
 
 export function TaskStatusBadge({ task, now }: { task: Task; now: number }) {
   const status = taskDisplayStatus(task, now);
-  const labels = { invited: 'Awaiting acceptance', expired: 'Expired · local clock', cancelled: 'Cancelled', accepted_unfunded: 'Accepted · unfunded' };
+  const labels = { invited: 'Awaiting acceptance', expired: 'Expired · local clock', cancelled: 'Cancelled', accepted_unfunded: 'Workspace accepted · chain separate' };
   return <span className={styles.badge} data-status={status}><Icon name={status === 'accepted_unfunded' ? 'check' : status === 'cancelled' ? 'close' : 'clock'} />{labels[status]}</span>;
 }
 

@@ -1,0 +1,12 @@
+{
+  "chainId": 968,
+  "network": "BOT Chain Testnet",
+  "address": "0xf199e1127daf2b79417bbe2517929e429bdcc8a0",
+  "transactionHash": "0x77654f32e930fdbf31800e389f37754c56a4be7a239675db5024421a2219ee2d",
+  "blockNumber": "24594241",
+  "blockHash": "0x1d331bd7561c81b6fcd3f45b8b833034981b4a3ff59393348c11df0d37dd5fc3",
+  "attestor": "0xC246F3C5E628553bB42b7Ef7F55476C9231217A0",
+  "runtimeCodeHash": "0x2b7ba446890c541453be2033a725535d718e91e3eecd36975cee2bb3d92055a3",
+  "status": "verified",
+  "explorer": "https://scan.bohr.life/address/0xf199e1127daf2b79417bbe2517929e429bdcc8a0"
+}

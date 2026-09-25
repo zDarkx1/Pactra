@@ -32,6 +32,7 @@ type Config struct {
 	Arbiters    []string
 	AIHandler   http.Handler
 	AILimits    AIBudgetLimits
+	Onchain     *OnchainConfig
 }
 type server struct {
 	pool     *pgxpool.Pool
@@ -58,6 +59,9 @@ func New(pool *pgxpool.Pool, c Config) (http.Handler, error) {
 	if pool == nil || e != nil || c.ChainID <= 0 || c.Domain == "" || strings.ContainsAny(c.Domain, "\r\n /?#@") || u.Host != c.Domain || u.Hostname() == "" || u.User != nil || u.Fragment != "" || u.Opaque != "" || (u.Scheme != "https" && (u.Scheme != "http" || u.Hostname() != "localhost")) {
 		return nil, errors.New("invalid workspace configuration")
 	}
+	if c.Onchain != nil && c.Onchain.ChainID != c.ChainID {
+		return nil, errors.New("onchain/auth chain mismatch")
+	}
 	s := &server{pool: pool, cfg: c, arbiters: map[string]bool{}}
 	for _, a := range c.Arbiters {
 		a, e = address(a)
@@ -77,6 +81,8 @@ func New(pool *pgxpool.Pool, c Config) (http.Handler, error) {
 	m.HandleFunc("POST /api/v1/tasks/{id}/accept", s.auth(s.accept))
 	m.HandleFunc("POST /api/v1/tasks/{id}/cancel", s.auth(s.cancel))
 	s.registerDelivery(m)
+	s.registerArbiter(m)
+	s.registerOnchain(m)
 	m.HandleFunc("POST /api/v1/review", s.budgetedAI(c.AIHandler, c.AILimits))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeout := 5 * time.Second
@@ -86,6 +92,10 @@ func New(pool *pgxpool.Pool, c Config) (http.Handler, error) {
 		ctx, cancel := context.WithTimeout(r.Context(), timeout)
 		defer cancel()
 		w.Header().Set("Cache-Control", "no-store")
+		if origins, present := r.Header["Origin"]; present && (len(origins) != 1 || origins[0] != u.Scheme+"://"+u.Host) {
+			fail(w, http.StatusForbidden)
+			return
+		}
 		m.ServeHTTP(w, r.WithContext(ctx))
 	}), nil
 }

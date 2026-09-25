@@ -21,6 +21,15 @@ The Go workspace now implements designated-worker invitations and immutable mani
 - **Backup arbiter:** A primary and backup human arbiter are designated and accepted before funding. If the primary misses the agreed decision deadline, the dispute may transition to the backup; this must revoke the primary's decision authority for that dispute. Owner approved the primary-plus-backup model; not implemented. Owner approved a 48-hour decision window for the primary starting when the dispute is opened, followed by a 48-hour window for the backup starting upon recorded handover. Transition caller, backup inactivity fallback and conflicts of interest remain unresolved. The timestamp anchors must be explicit in implementation; neither timer causes a transaction to run automatically.
 - **Still unresolved:** self-invitations, invitation expiry/cancellation, reassignment, and dependency-linked deliverable rules.
 
+## Additional owner approvals — 2026-09-25
+
+- The buyer may reclaim a deliverable allocation only strictly after its delivery deadline agreed before funding, and only if the worker has never submitted that deliverable. This does not authorize refunds during an outstanding revision.
+- If both the primary and backup decision windows have elapsed, settlement requires signatures from both buyer and worker over the exact allocation split. No unilateral refund or automatic half-split; absent agreement, funds remain locked.
+- The Pactra backend may attest that an exact submission is persisted and retrievable by the buyer. The contract starts its review clock only upon a valid attestation bound to that task, deliverable and round. This is an availability trust assumption, not a quality judgment or authority to withdraw funds.
+- The owner supplied consenting arbiter nominations: primary `0x95Fe644374793C710568325d30594CF6e5C2C609`, backup `0x6c65b86D73d483c86be78960aB4C12c039262dF2`. Both exact mixed-case addresses passed EIP-55 validation. A nomination does not prove control of the wallet; live role testing still requires each holder.
+
+The implementation sections above are historical. The integration workstream must update deployment/test evidence separately and must not treat these approvals as proof of deployed contracts.
+
 ## Remaining decisions
 
 - Who may create a task, and how is each participant authenticated?

@@ -1,7 +1,12 @@
 import { parseTask, uuidPattern, type Task } from './workspace-types.ts';
+import { parseSettlementResponse } from './onchain-types.ts';
 import { parseAdvisoryReview, parseTaskPage, workspaceQuery, workspaceRoute, type TaskPage } from './workspace-path.ts';
 let identity: { address: string; chainId: number } | null = null;
 const identityCleanups = new Set<() => void>();
+export function onWorkspaceIdentityChange(cleanup: () => void) {
+  identityCleanups.add(cleanup);
+  return () => { identityCleanups.delete(cleanup); };
+}
 export function setWorkspaceIdentity(next: typeof identity) {
   if (identity === next) return;
   identity = next ? { ...next } : null;
@@ -45,6 +50,7 @@ export async function workspaceRequest<Result>(path: string, init: RequestInit =
     throw new WorkspaceError(message, response.status);
   }
   try {
+    if (route.kind === 'settlement' || route.kind === 'arbiterQueue') return parseSettlementResponse(pathname, result) as Result;
     if (route.kind === 'tasks' && method === 'GET') return parseTaskPage(result) as Result;
     if (route.kind === 'delivery') {
       const { parseDeliveryHistory, parseDeliveryMutation } = await import('./delivery-types.ts');
