@@ -21,3 +21,7 @@ next-*.log
 
 agents/
 */TASK.md
+
+# Compiled server binaries
+backend/pactra-server
+backend/server
