@@ -51,7 +51,7 @@ function TaskList() {
         <select value={role} onChange={event => setRole(event.target.value)}><option value="all">Buyer and worker</option><option value="buyer">Buyer</option><option value="worker">Worker</option></select>
       </label>
       <label className={styles.field}>Status
-        <select value={status} onChange={event => setStatus(event.target.value)}><option value="all">All statuses</option><option value="invited">Awaiting acceptance</option><option value="expired">Expired (local clock)</option><option value="accepted_unfunded">Accepted · unfunded</option><option value="cancelled">Cancelled</option></select>
+        <select value={status} onChange={event => setStatus(event.target.value)}><option value="all">All statuses</option><option value="invited">Awaiting acceptance</option><option value="expired">Expired</option><option value="accepted_unfunded">Accepted · awaiting funding</option><option value="cancelled">Cancelled</option></select>
       </label>
       <TaskButton type="button" className={[shared.secondary, styles.refresh].join(' ')} disabled={loading} aria-busy={loading} onClick={() => void reload()}><Icon name="refresh" />{loading && data ? 'Refreshing…' : 'Refresh list'}</TaskButton>
     </div>

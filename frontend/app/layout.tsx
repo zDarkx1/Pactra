@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: { default: 'Pactra on BOT — Agreements and localization review', template: '%s · Pactra' },
   description: 'Agree on localization work before it starts. Review exact source and output with shared evidence. Agreements remain unfunded.',
-  icons: { icon: '/logo-bot.svg' },
+  icons: { icon: '/logo-pactra.svg' },
   robots: { index: process.env.PACTRA_PUBLIC_INDEXING === 'true', follow: process.env.PACTRA_PUBLIC_INDEXING === 'true' },
 };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

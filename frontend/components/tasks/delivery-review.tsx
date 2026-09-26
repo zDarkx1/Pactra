@@ -13,8 +13,8 @@ import { CriteriaView } from './manifest-details';
 import styles from './task-styles';
 
 const stateLabels = { not_submitted: 'No submission', submitted: 'Awaiting buyer review', revision_requested: 'Revision requested', accepted: 'Accepted by buyer', disputed: 'Disputed · review frozen' };
-const actionLabels: Record<DeliveryAction, string> = { submit: 'Submit voluntary work', accept: 'Accept this version', request_revision: 'Request revision', dispute: 'Flag dispute' };
-const warning = 'This is the voluntary unfunded work review record, not a chain balance or deadline report. These workspace actions do not move funds or start the onchain review clock. If you funded a contract separately, its deadlines and obligations still apply; inspect the onchain panel.';
+const actionLabels: Record<DeliveryAction, string> = { submit: 'Submit work for review', accept: 'Accept this version', request_revision: 'Request revision', dispute: 'Flag dispute' };
+const warning = 'This is the workspace review record for evidence and feedback. It is separate from the escrow balance and deadlines on chain, and none of these actions move funds. If the contract was funded, its deadlines and obligations apply independently; inspect the onchain panel.';
 const freezeWarning = 'A dispute permanently freezes review for this deliverable. It records a participant allegation, not a verified finding. There is no automated arbitration or resolution.';
 
 export function DeliveryReview({ task }: { task: Task }) {
@@ -25,8 +25,8 @@ export function DeliveryReview({ task }: { task: Task }) {
   // Key the entire private subtree, not just the fetching effect: old artifacts/drafts
   // cannot appear for even one render after a task/account/session change.
   const scope = [account, sessionKey, config.chain?.id, task.id, task.manifest_hash].join(':');
-  return <section className={styles.stack} aria-label="Voluntary unfunded work review" key={scope}>
-    <h2>Voluntary unfunded work review</h2>
+  return <section className={styles.stack} aria-label="Work review" key={scope}>
+    <h2>Work review</h2>
     <p className={styles.notice}><Icon name="info" />{warning}</p>
     <p className={styles.hint}>You are the {role}. Buyer and worker can view these artifacts; nominated arbiters can read this deliverable’s evidence after a dispute is recorded. Drafts stay in memory and are cleared when you leave or change accounts.</p>
     {task.manifest.deliverables.map(deliverable => <DeliverableReview key={scope + ':' + deliverable.id} task={task} deliverable={deliverable} role={role} />)}

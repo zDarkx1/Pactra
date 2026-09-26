@@ -95,6 +95,14 @@ export default function CheckerWorkbench() {
     setInvalidated(true);
   }
 
+  function formatJson(field: 'source' | 'submission') {
+    try {
+      const value: unknown = JSON.parse(input[field]);
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+      edit({ ...input, [field]: JSON.stringify(value, null, 2) }, false);
+    } catch { /* Keep the raw text; validation reports the problem on submit. */ }
+  }
+
   let reviewBody: string | null = null;
   try { reviewBody = prepareCheck(input); } catch {}
 
@@ -109,12 +117,12 @@ export default function CheckerWorkbench() {
         <div className={styles.documents}>
           <div className={styles.document}>
             <div className={styles.documentHeading}><label htmlFor="checker-source">Source JSON</label><span>Original strings</span></div>
-            <textarea id="checker-source" aria-invalid={view.error?.startsWith('Source') || undefined} aria-describedby={view.error?.startsWith('Source') ? 'checker-source-error checker-json-help' : 'checker-json-help'} value={input.source} onChange={event => edit({ ...input, source: event.target.value })} spellCheck={false} autoCapitalize="off" autoComplete="off" autoCorrect="off" placeholder={'{\n  "greeting": "Hello {name}"\n}'} />
+            <textarea id="checker-source" onBlur={() => formatJson('source')} aria-invalid={view.error?.startsWith('Source') || undefined} aria-describedby={view.error?.startsWith('Source') ? 'checker-source-error checker-json-help' : 'checker-json-help'} value={input.source} onChange={event => edit({ ...input, source: event.target.value })} spellCheck={false} autoCapitalize="off" autoComplete="off" autoCorrect="off" placeholder={'{\n  "greeting": "Hello {name}"\n}'} />
             {view.error?.startsWith('Source') && <p className={styles.fieldError} id="checker-source-error">{view.error}</p>}
           </div>
           <div className={styles.document}>
             <div className={styles.documentHeading}><label htmlFor="checker-submission">Submission JSON</label><span>Text to check</span></div>
-            <textarea id="checker-submission" aria-invalid={view.error?.startsWith('Submission') || undefined} aria-describedby={view.error?.startsWith('Submission') ? 'checker-submission-error checker-json-help' : 'checker-json-help'} value={input.submission} onChange={event => edit({ ...input, submission: event.target.value })} spellCheck={false} autoCapitalize="off" autoComplete="off" autoCorrect="off" placeholder={'{\n  "greeting": "Halo {name}"\n}'} />
+            <textarea id="checker-submission" onBlur={() => formatJson('submission')} aria-invalid={view.error?.startsWith('Submission') || undefined} aria-describedby={view.error?.startsWith('Submission') ? 'checker-submission-error checker-json-help' : 'checker-json-help'} value={input.submission} onChange={event => edit({ ...input, submission: event.target.value })} spellCheck={false} autoCapitalize="off" autoComplete="off" autoCorrect="off" placeholder={'{\n  "greeting": "Halo {name}"\n}'} />
             {view.error?.startsWith('Submission') && <p className={styles.fieldError} id="checker-submission-error">{view.error}</p>}
           </div>
         </div>

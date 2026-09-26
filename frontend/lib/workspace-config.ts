@@ -28,9 +28,12 @@ export function getPublicWorkspaceConfig(environment: Record<string, string | un
     if (!arbiters.every(address => walletAddressPattern.test(address) && !/^0x0{40}$/.test(address))) return disabled;
     const projectId = environment.PACTRA_WALLETCONNECT_PROJECT_ID?.trim() || null;
     if (projectId && !/^[a-f0-9]{32}$/i.test(projectId)) return disabled;
+    const escrowRaw = environment.PACTRA_ESCROW_ADDRESS?.trim() || '';
+    if (escrowRaw && !(walletAddressPattern.test(escrowRaw) && !/^0x0{40}$/.test(escrowRaw))) return disabled;
     return { enabled: true, reason: null, walletConnectProjectId: projectId, arbiters,
       chain: { id, name: environment.PACTRA_CHAIN_NAME.trim(), rpcUrl: publicUrl(environment.PACTRA_RPC_URL),
         explorerUrl: environment.PACTRA_EXPLORER_URL ? publicUrl(environment.PACTRA_EXPLORER_URL) : null,
+        escrowAddress: escrowRaw ? escrowRaw : null,
         nativeCurrency: { name: environment.PACTRA_NATIVE_CURRENCY_NAME.trim(), symbol: environment.PACTRA_NATIVE_CURRENCY_SYMBOL.trim(), decimals } } };
   } catch { return disabled; }
 }

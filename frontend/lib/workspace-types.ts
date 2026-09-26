@@ -16,6 +16,7 @@ export type Task = {
 export type PublicWorkspaceConfig = {
   enabled: boolean; reason: string | null;
   chain: { id: number; name: string; rpcUrl: string; explorerUrl: string | null;
+    escrowAddress: string | null;
     nativeCurrency: { name: string; symbol: string; decimals: number } } | null;
   walletConnectProjectId: string | null; arbiters: string[];
 };

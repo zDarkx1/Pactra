@@ -7,9 +7,33 @@ import { LazyEvidence } from "../components/lazy-evidence";
 import { HeadingEntrance } from "../components/heading-entrance";
 import { LandingScroll } from "../components/landing-scroll";
 import { ScopeStory } from "../components/scope-story";
+import { getPublicWorkspaceConfig } from "../lib/workspace-config";
 const container = "mx-auto w-full max-w-[1360px] px-6 sm:px-10 lg:px-16";
 const link =
   "group inline-flex min-h-11 items-center gap-3 text-sm font-medium text-ink underline underline-offset-4 decoration-[var(--hairline)] hover:decoration-ink";
+
+// BOT Chain badge links straight to the deployed escrow contract on the
+// official explorer for the configured network, so judges and users can
+// inspect real on-chain activity with one click.
+function BotChainBadge() {
+  const config = getPublicWorkspaceConfig();
+  const address = config.chain?.escrowAddress ?? null;
+  const explorer = config.chain?.explorerUrl ?? "https://scan.botchain.ai";
+  const href = address ? `${explorer.replace(/\/$/, "")}/address/${address}` : "https://botchain.ai";
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="View the Pactra escrow contract on the BOT Chain explorer"
+      className="mx-auto mb-7 inline-flex items-center gap-2 rounded-full border border-(--hairline) px-3 py-1.5 text-xs text-muted no-underline transition-colors hover:border-[#a9583e] hover:text-ink"
+    >
+      <img src="/logo-bot.svg" alt="BOT Chain logo" width={28} height={28} className="size-7" />
+      Built for BOT Chain
+      <ArrowUpRight className="size-3.5" weight="bold" />
+    </a>
+  );
+}
 export const metadata: Metadata = {
   title: "Agree on what good looks like.",
   description: "Clear scope, inspectable evidence, human decisions.",
@@ -35,10 +59,7 @@ export default function HomePage() {
             " relative flex min-h-[680px] flex-col items-center justify-center py-20 text-center lg:min-h-[760px] lg:py-24"
           }
         >
-          <p className="mx-auto mb-7 inline-flex items-center gap-2 rounded-full border border-(--hairline) px-3 py-1.5 text-xs text-muted">
-            <img src="/logo-bot.svg" alt="BOT Chain logo" width={28} height={28} className="size-7" />
-            Built for BOT Chain
-          </p>
+          <BotChainBadge />
           <h1 className="mx-auto mb-7 max-w-[1040px] text-[clamp(3.15rem,7.5vw,7rem)] leading-[.99] font-medium tracking-[-.065em]">
             Good work starts
             <br />
